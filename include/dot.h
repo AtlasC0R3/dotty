@@ -1,0 +1,28 @@
+#ifndef PLATFORM_H
+#define PLATFORM_H
+class Platform
+{
+  private:
+	double dot_x;
+    double dot_y;
+    int width;
+    int height;
+    bool hasCoin;
+    int coinX;
+    int coinY;
+    bool hell;
+	
+  public:
+	Platform(int index);
+	double getX();
+	double getY();
+    int getWidth();
+    int getHeight();
+    bool getHasCoin();
+    void setHasCoin(bool value);
+    int getCoinX();
+    int getCoinY();
+    void updatePosition();
+
+};
+#endif
