@@ -16,13 +16,14 @@ class Platform
 	Platform(int index);
 	double getX();
 	double getY();
-    int getWidth();
-    int getHeight();
-    bool getHasCoin();
-    void setHasCoin(bool value);
-    int getCoinX();
-    int getCoinY();
-    void updatePosition();
+  int    getWidth();
+  int    getHeight();
+  bool   getHasCoin();
+  void   setHasCoin(bool value);
+  int    getCoinX();
+  int    getCoinY();
+  void   updatePosition();
+  void   remove();
 
 };
 #endif

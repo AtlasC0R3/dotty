@@ -18,20 +18,33 @@ bool extreme_debug_prints = false;
 
 // Setting variables for game logic
 Player dotty{50, 50, 96, 96};
-int velX = 3;
-int velY = 0;
+double velX;
+double velY;
+double vel;
 int game_status = 0;
 bool left;
 bool right;
 bool up;
 bool down;
-Platform dots[4] = {{0}, {1}, {2}, {3}};
+Platform dots[8] = {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};
+int dot_amount = 1;
+int eaten = 0;
+int collision_type = 0;
 //--------------------------------------------------------------------------------------
+
+void reset_dots(void){
+    for (int i = 0; i < 0; i++) dots[i].remove();
+    for (int i = 0; i < dot_amount; i++) dots[i].updatePosition();
+}
 
 void reset_dotty(void){
     dotty = {50, 50, 96, 96};
+    vel = 3;
     velX = 3;
     velY = 0;
+    eaten = 0;
+
+    reset_dots();
 };
 
 void checkPlayerCollision()
@@ -41,13 +54,17 @@ void checkPlayerCollision()
         if (dotty.getRelativeX() > dots[i].getX() && dotty.getRelativeX() < dots[i].getX() + 64 && dotty.getRelativeY() > dots[i].getY() && dotty.getRelativeY() < dots[i].getY() + 64)
         {
             // dot obtained
-            const char *printer = "congrats you win the game\n";
-            printf(printer);
             dots[i].updatePosition();
+            vel+=0.25;
+            if (velX > 0) velX = vel;       // welcome: unreadable code that will take 30 seconds to decode for a human being!
+            if (velX < 0) velX = vel * -1;
+            if (velY > 0) velY = vel;
+            if (velY < 0) velY = vel * -1;
+            eaten+=1;
+            collision_type = 1;
         }
     }
 }
-
 // Controller/keyboard input mechanisms
 bool check_left(void){
     bool go_left = false;
@@ -172,6 +189,11 @@ int main(void)
     const int screenHeight = 450;
     InitWindow(screenWidth, screenHeight, "Dotty");
 
+    // Initialize audio
+      InitAudioDevice();
+      Sound ouchie   = LoadSound("resources/sounds/ouchie.wav");
+      Sound obtained = LoadSound("resources/sounds/obtained.wav");
+
     // Initialize textures.
     // NOTE: Textures MUST be loaded after Window initialization (OpenGL context is required)
     // NOTE: Otherwise you'll get a "Segmentation fault" error.
@@ -201,9 +223,7 @@ int main(void)
     //   Texture2D dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
     //--------------------------------------------------------------------------------------
 
-    // Initialize audio
-    InitAudioDevice();
-    Sound ouchie = LoadSound("resources/sounds/ouchie.wav");
+    reset_dotty();
 
     SetTargetFPS(60);
 
@@ -223,10 +243,10 @@ int main(void)
             velY = 0;
         }
 
-        if (left)  velX = -3;
-        if (right) velX =  3;
-        if (up)    velY = -3;
-        if (down)  velY =  3;
+        if (left)  velX = vel * -1;
+        if (right) velX = vel;
+        if (up)    velY = vel * -1;
+        if (down)  velY = vel;
 
         if (((dotty.getRelativeX() >= screenWidth)  or (dotty.getX() <= 0)) or 
             ((dotty.getRelativeY() >= screenHeight) or (dotty.getY() <= 0))){
@@ -236,9 +256,15 @@ int main(void)
             
         dotty.setX(dotty.getX() + velX);
         dotty.setY(dotty.getY() + velY);
-            
 
-        if (extreme_debug_prints) printf("%d\n", velX);
+        checkPlayerCollision();
+        if (collision_type != 0){
+            if (collision_type == 1){
+                PlaySound(obtained);
+            }
+            collision_type = 0;
+        }
+
         BeginDrawing();
         
             ClearBackground(RAYWHITE);
@@ -246,8 +272,6 @@ int main(void)
             for (int i = 0; i < 8; i++){
                 DrawTexture(dot, dots[i].getX(), dots[i].getY(), WHITE);
             }
-
-            checkPlayerCollision();
 
             DrawTexture(dotty_base, dotty.getX(), dotty.getY(), WHITE);
             if (velX > 0){
@@ -263,7 +287,9 @@ int main(void)
                 DrawTexture(dotty_front, dotty.getX(), dotty.getY(), WHITE);
             }
             
-            DrawText("Work in progress!", 14, GetScreenHeight() - 28, 14, DARKGRAY);
+            char eaten_cchar[100000];
+            sprintf(eaten_cchar, "%d", eaten);
+            DrawText(eaten_cchar, 20, GetScreenHeight() - 40, 20, DARKGRAY);
 
         EndDrawing();
 
