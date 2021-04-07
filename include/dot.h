@@ -1,27 +1,19 @@
-#ifndef PLATFORM_H
-#define PLATFORM_H
-class Platform
+#ifndef DOT_H
+#define DOT_H
+class Dot
 {
   private:
 	double dot_x;
     double dot_y;
     int width;
     int height;
-    bool hasCoin;
-    int coinX;
-    int coinY;
-    bool hell;
 	
   public:
-	Platform(int index);
+	Dot(int index);
 	double getX();
 	double getY();
   int    getWidth();
   int    getHeight();
-  bool   getHasCoin();
-  void   setHasCoin(bool value);
-  int    getCoinX();
-  int    getCoinY();
   void   updatePosition();
   void   remove();
 

@@ -6,6 +6,7 @@
 // Game-specific includes and sh- stuff
 #include "../include/player.h"  // That works.
 #include "../include/dot.h"
+#include "../include/potion.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -18,6 +19,7 @@ bool extreme_debug_prints = false;
 
 // Setting variables for game logic
 Player dotty{50, 50, 96, 96};
+Player dupedotty{50, 50, 96, 96};
 double velX;
 double velY;
 double vel;
@@ -26,14 +28,19 @@ bool left;
 bool right;
 bool up;
 bool down;
-Platform dots[8] = {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};
+Dot dots[8] = {{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};
+Potion potion = 0;
+Potion dupepotion = 1;
+bool dupe = false;
+
 int dot_amount = 1;
 int eaten = 0;
 int collision_type = 0;
+double multiplier = 0.1;
 //--------------------------------------------------------------------------------------
 
 void reset_dots(void){
-    for (int i = 0; i < 0; i++) dots[i].remove();
+    for (int i = 0; i < 8; i++) dots[i].remove();
     for (int i = 0; i < dot_amount; i++) dots[i].updatePosition();
 }
 
@@ -43,25 +50,53 @@ void reset_dotty(void){
     velX = 3;
     velY = 0;
     eaten = 0;
+    dupe = false;
+    dot_amount = 1;
 
     reset_dots();
+    potion.remove();
+    potion.setAvailable(true);
+    dupepotion.remove();
+    dupepotion.setAvailable(true);
 };
 
 void checkPlayerCollision()
 {
     for (int i = 0; i < 8; i++)
     {
-        if (dotty.getRelativeX() > dots[i].getX() && dotty.getRelativeX() < dots[i].getX() + 64 && dotty.getRelativeY() > dots[i].getY() && dotty.getRelativeY() < dots[i].getY() + 64)
+        if ((dotty.getRelativeX() > dots[i].getX() && dotty.getRelativeX() < dots[i].getX() + 64 && dotty.getRelativeY() > dots[i].getY() and dotty.getRelativeY() < dots[i].getY() + 64) or
+            (dupe and (dupedotty.getRelativeX() > dots[i].getX() && dupedotty.getRelativeX() < dots[i].getX() + 64 && dupedotty.getRelativeY() > dots[i].getY() && dupedotty.getRelativeY() < dots[i].getY() + 64)))
         {
             // dot obtained
             dots[i].updatePosition();
-            vel+=0.25;
+            vel+=multiplier;
             if (velX > 0) velX = vel;       // welcome: unreadable code that will take 30 seconds to decode for a human being!
             if (velX < 0) velX = vel * -1;
             if (velY > 0) velY = vel;
             if (velY < 0) velY = vel * -1;
             eaten+=1;
             collision_type = 1;
+        }
+    }
+    if ((dotty.getRelativeX() > potion.getX() && dotty.getRelativeX() < potion.getX() + 64 && dotty.getRelativeY() > potion.getY() and dotty.getRelativeY() < potion.getY() + 64) or 
+       (dupe and (dupedotty.getRelativeX() > potion.getX() && dupedotty.getRelativeX() < potion.getX() + 64 && dupedotty.getRelativeY() > potion.getY() && dupedotty.getRelativeY() < potion.getY() + 64))){
+        collision_type = 2;
+        if (not (dot_amount == 8)){
+            dot_amount+=1;
+            dots[dot_amount].updatePosition();
+        } else{
+            potion.setAvailable(false);
+        }
+        potion.remove();
+    }if (dotty.getRelativeX() > dupepotion.getX() && dotty.getRelativeX() < dupepotion.getX() + 64 && dotty.getRelativeY() > dupepotion.getY() && dotty.getRelativeY() < dupepotion.getY() + 64){
+        collision_type = 2;
+        dupepotion.setAvailable(false);
+        dupepotion.remove();
+        dupe = true;
+    }
+    if (dupe){
+        if (dotty.getRelativeX() > dupedotty.getX() && dotty.getX() < dupedotty.getRelativeX() + 32 && dotty.getY() > dupedotty.getY() && dotty.getRelativeY() < dupedotty.getY() + 64){
+            reset_dotty();
         }
     }
 }
@@ -193,6 +228,7 @@ int main(void)
       InitAudioDevice();
       Sound ouchie   = LoadSound("resources/sounds/ouchie.wav");
       Sound obtained = LoadSound("resources/sounds/obtained.wav");
+      Sound potion_sound = LoadSound("resources/sounds/potion.wav");
 
     // Initialize textures.
     // NOTE: Textures MUST be loaded after Window initialization (OpenGL context is required)
@@ -217,6 +253,9 @@ int main(void)
       UnloadImage(dotty_side);
     // Power-up textures
       Texture2D dot = LoadTexture("resources/images/items/dot.png");
+    // Potion textures
+      Texture2D potion_dot = LoadTexture("resources/images/items/potion-dots.png");
+      Texture2D potion_dupe = LoadTexture("resources/images/items/potion-dupe.png");
     // Likely unused textures
     //   Texture2D dotty_blink = LoadTexture("resources/images/dotty/blink.png");
     //   Texture2D dotty_half = LoadTexture("resources/images/dotty/half-blink.png");
@@ -243,24 +282,29 @@ int main(void)
             velY = 0;
         }
 
-        if (left)  velX = vel * -1;
-        if (right) velX = vel;
-        if (up)    velY = vel * -1;
-        if (down)  velY = vel;
+             if (left)  velX = vel * -1;
+        else if (right) velX = vel;
+        else if (up)    velY = vel * -1;
+        else if (down)  velY = vel;
 
-        if (((dotty.getRelativeX() >= screenWidth)  or (dotty.getX() <= 0)) or 
-            ((dotty.getRelativeY() >= screenHeight) or (dotty.getY() <= 0))){
+        if (((dotty.getX() + 64 >= screenWidth)  or (dotty.getX() <= 0)) or 
+            ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0))){
             reset_dotty(); // gaem over?!?!?!??!?!?!??!?!??!?!?!??!?!?! yes
             PlaySound(ouchie);
         }
             
         dotty.setX(dotty.getX() + velX);
         dotty.setY(dotty.getY() + velY);
+        dupedotty.setX(screenWidth  - (dotty.getX() + 64));
+        dupedotty.setY(screenHeight - (dotty.getY() + 64));
 
         checkPlayerCollision();
         if (collision_type != 0){
             if (collision_type == 1){
                 PlaySound(obtained);
+            }
+            else if (collision_type == 2){
+                PlaySound(potion_sound);
             }
             collision_type = 0;
         }
@@ -272,6 +316,9 @@ int main(void)
             for (int i = 0; i < 8; i++){
                 DrawTexture(dot, dots[i].getX(), dots[i].getY(), WHITE);
             }
+
+            DrawTexture(potion_dot, potion.getX(), potion.getY(), WHITE);
+            DrawTexture(potion_dupe, dupepotion.getX(), dupepotion.getY(), WHITE);
 
             DrawTexture(dotty_base, dotty.getX(), dotty.getY(), WHITE);
             if (velX > 0){
@@ -286,6 +333,29 @@ int main(void)
                 // couldn't determine in which position they were going
                 DrawTexture(dotty_front, dotty.getX(), dotty.getY(), WHITE);
             }
+
+            if(dupe){
+                DrawTexture(dotty_base, dupedotty.getX(), dupedotty.getY(), WHITE);
+                if (velX > 0){
+                    DrawTexture(dotty_left, dupedotty.getX(), dupedotty.getY(), WHITE);
+                }else if (velX < 0){
+                    DrawTexture(dotty_right, dupedotty.getX(), dupedotty.getY(), WHITE);
+                }else if (velY > 0){
+                    DrawTexture(dotty_up, dupedotty.getX(), dupedotty.getY(), WHITE);
+                }else if (velY < 0){
+                    DrawTexture(dotty_down, dupedotty.getX(), dupedotty.getY(), WHITE);
+                }else{
+                    // couldn't determine in which position they were going
+                    DrawTexture(dotty_front, dupedotty.getX(), dupedotty.getY(), WHITE);
+                }
+            }
+
+            if ((rand() % 2000 == 1) and (potion.getX() < 0)){
+                potion.update();
+            }
+            if ((rand() % 2500 == 1) and (dupepotion.getX() < 0)){
+                dupepotion.update();
+            }
             
             char eaten_cchar[100000];
             sprintf(eaten_cchar, "%d", eaten);
@@ -297,8 +367,7 @@ int main(void)
 
     }
 
-    CloseWindow();              // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
+    CloseWindow();
 
     return 0;
 }

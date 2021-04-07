@@ -2,64 +2,36 @@
 #include "dot.h"
 #include <math.h>
 #include <cstdio>
-const int screenWidth = 800;
-const int screenHeight = 450;
-Platform::Platform(int index)
+Dot::Dot(int index)
 {
     width = 64;
     height = 64;
     dot_x = rand()% 660 + 20;
     dot_y = 0 - height - (index * 100);
-    int coinInt = rand()% 4;
-    if (coinInt == 0 || index == 0)
-    {
-        hasCoin = false;
-    } else {
-        hasCoin = true;
-    }
-    coinX = dot_x + width/2 - 24/2;
-    coinY = dot_y - 24 - 5;
     
 }
 
-double Platform::getX()
+double Dot::getX()
 {
     return dot_x;
 }
 
-double Platform::getY()
+double Dot::getY()
 {
     return dot_y;
 }
 
-int Platform::getWidth()
+int Dot::getWidth()
 {
     return width;
 }
 
-int Platform::getHeight()
+int Dot::getHeight()
 {
     return height;
 }
 
-bool Platform::getHasCoin()
-{
-    return hasCoin;
-}
-void Platform::setHasCoin(bool value)
-{
-    hasCoin = value;
-}
-int Platform::getCoinX()
-{
-    return coinX;
-}
-int Platform::getCoinY()
-{
-    return coinY;
-}
-
-void Platform::updatePosition()
+void Dot::updatePosition()
 {
     int old_dot_x = dot_x;
     int old_dot_y = dot_y;
@@ -76,7 +48,7 @@ void Platform::updatePosition()
     }
 }
 
-void Platform::remove()
+void Dot::remove()
 {
     dot_y = -50;
     dot_x = -50;

@@ -365,7 +365,7 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
 endif
 
 # Define all source files required
-PROJECT_SOURCE_FILES ?= src/main.cpp include/player.cpp include/dot.cpp
+PROJECT_SOURCE_FILES ?= src/*.cpp include/*.cpp
 
 # Define all object files from source files
 OBJS = $(patsubst %.c, %.o, $(PROJECT_SOURCE_FILES))
