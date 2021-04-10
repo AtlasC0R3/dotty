@@ -1,9 +1,12 @@
-// C includes I think
+// C includes
 #include "raylib.h"
+
+#include <dirent.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-// Game-specific includes and sh- stuff
+// Game-specific includes and stuff
 #include "../include/player.h"  // That works.
 #include "../include/dot.h"
 #include "../include/potion.h"
@@ -29,6 +32,8 @@ Potion potion = 0;
 Potion dupepotion = 1;
 Potion doompotion = 2;
 bool dupe = false;
+int highscoreInt = LoadStorageValue(0);
+char highscore[32];
 
 int dot_amount = 1;
 int eaten = 0;
@@ -42,9 +47,9 @@ double multiplier = 0.1;
 int currentGesture = GESTURE_NONE;
 int lastGesture = GESTURE_NONE;
 bool gesture_movement = false;
-typedef enum GameScreen { TITLE, GAMEPLAY, PAUSE, GAMEOVER } GameScreen;
+typedef enum GameScreen { SPLASH, TITLE, GAMEPLAY, PAUSE, GAMEOVER } GameScreen;
 bool pauseButtonAlreadyPressed;
-bool disableEscapeQuit = false;  // set it to "true" and it'll exit the game when the user presses "escape"
+bool disableEscapeQuit = false;  // set it to "true" and it'll pause the game when the user presses "escape"
 //--------------------------------------------------------------------------------------
 
 void reset_dots(void){
@@ -54,12 +59,14 @@ void reset_dots(void){
 
 void reset_dotty(void){
     dotty = {50, 50, 96, 96};
+    dupedotty = {-5000, -5000, 96, 96};
     vel = 3;
     velX = 3;
     velY = 0;
     eaten = 0;
     dupe = false;
     dot_amount = 1;
+    highscoreInt = LoadStorageValue(0);
 
     reset_dots();
     potion.remove();
@@ -73,8 +80,8 @@ void checkPlayerCollision()
 {
     for (int i = 0; i < 8; i++)
     {
-        if ((dotty.getRelativeX() > dots[i].getX() && dotty.getRelativeX() < dots[i].getX() + 64 && dotty.getRelativeY() > dots[i].getY() and dotty.getRelativeY() < dots[i].getY() + 64) or
-            (dupe and (dupedotty.getRelativeX() > dots[i].getX() && dupedotty.getRelativeX() < dots[i].getX() + 64 && dupedotty.getRelativeY() > dots[i].getY() && dupedotty.getRelativeY() < dots[i].getY() + 64)))
+        if (((dotty.getX() + 48 > dots[i].getX() && dotty.getX() < dots[i].getX() + 48) && (dotty.getY() + 48 > dots[i].getY() && dotty.getY() < dots[i].getY() + 48)) or
+            (dupe and ((dupedotty.getX() + 48 > dots[i].getX() && dupedotty.getX() < dots[i].getX() + 48) && (dupedotty.getY() + 48 > dots[i].getY() && dupedotty.getY() < dots[i].getY() + 48))))
             // welcome: unreadable code that will take 2 minutes to decode for a human being!
         {
             // dot obtained
@@ -119,7 +126,9 @@ void checkPlayerCollision()
         doompotion.remove();
     }
     if (dupe){
-        if (dotty.getRelativeX() > dupedotty.getX() && dotty.getX() < dupedotty.getRelativeX() + 32 && dotty.getY() > dupedotty.getY() && dotty.getRelativeY() < dupedotty.getY() + 32){
+        // dotty.getY() > dupedotty.getY() and dotty.getY() < dupedotty.getY() + 48
+        if ((dotty.getX() > dupedotty.getX() - 48 && dotty.getX() < dupedotty.getX() + 48) and
+            (dotty.getY() > dupedotty.getY() - 48 && dotty.getY() < dupedotty.getY() + 48)){
             collision_type = OUCHIE;
             failure = CLONE_COLLISION;
             // the duplicate Dotty's entered in collision
@@ -232,7 +241,7 @@ bool cont_exit(void){
     for( a = -1; a < 9; a = a + 1 ){
         if (IsGamepadAvailable(a)){
             // there's a gamepad!
-            if (IsGamepadButtonPressed(a, 14)){
+            if (IsGamepadButtonPressed(a, 14) and IsWindowFocused()){
                 exit = true;
                 if (debug_prints) printf("Home button pressed on controller name %s: exiting...\n", GetGamepadName(a));
             }
@@ -253,6 +262,18 @@ bool press_start(void){
        IsGestureDetected(GESTURE_TAP)){                                                                     // check if the user tapped on the window or screen
         start = true;
     }
+    int a;
+    for( a = 0; a <= 8; a+=1 ){
+        if (IsGamepadAvailable(a)){
+            // there's a gamepad!
+            int b;
+            for (b=0;b <= GetGamepadAxisCount(a);b+=1){
+                if (GetGamepadAxisMovement(a, b) == 1){
+                    start = true;
+                }
+            }
+        }
+    }
     return (start);
 }
 
@@ -266,7 +287,14 @@ bool do_pause(void){
                 pause = true;
                 if (debug_prints) printf("Pause button pressed on controller name %s\n", GetGamepadName(a));
             }
+            if ((GetGamepadAxisMovement(a, 4) >= 0.5) && (GetGamepadAxisMovement(a, 5) >= 0.5)){
+                pause = true;
+                if (debug_prints) printf("Both triggers pressed on controller name %s\n", GetGamepadName(a));
+            }
         }
+    }
+    if (GetGamepadButtonPressed() == 5 || GetGamepadButtonPressed() == 8){
+        pause = true;
     }
     if (IsKeyDown(KEY_ESCAPE) || IsKeyDown(KEY_SPACE) || IsGestureDetected(GESTURE_DOUBLETAP)){
         pause = true;
@@ -283,19 +311,26 @@ bool do_pause(void){
 
 int main(void)
 {
-    if (extreme_debug_prints) debug_prints = true;
+    // TODO: make a splash screen saying who made the game (me)
 
-    // Set an invalid exit key, since we'll need it for a pause menu later.
+    if (!opendir("resources")) {
+        printf("Could not find the resources/ folder. This will render the game unplayable.\n");
+        exit(1);
+    }
+    
+    if (extreme_debug_prints) debug_prints = true;
 
 
     const int screenWidth = 800;
     const int screenHeight = 450;
     InitWindow(screenWidth, screenHeight, "Dotty");
 
+    SetWindowIcon(LoadImage("resources/images/logo/icon.ico"));
+
     // Initialize audio
       InitAudioDevice();
-      Sound ouchie   = LoadSound("resources/sounds/ouchie.wav");
-      Sound obtained = LoadSound("resources/sounds/obtained.wav");
+      Sound ouchie       = LoadSound("resources/sounds/ouchie.wav");
+      Sound obtained     = LoadSound("resources/sounds/obtained.wav");
       Sound potion_sound = LoadSound("resources/sounds/potion.wav");
       Sound clone_ouchie = LoadSound("resources/sounds/clone-ouchie.wav");
 
@@ -340,7 +375,7 @@ int main(void)
     //   Texture2D dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
     //--------------------------------------------------------------------------------------
 
-    GameScreen currentScreen = TITLE;
+    GameScreen currentScreen = SPLASH;
 
     reset_dotty();
 
@@ -354,6 +389,14 @@ int main(void)
         }
         switch(currentScreen)
         {
+            case SPLASH: 
+            {
+                currentScreen = TITLE; break;
+                if (press_start())
+                {
+                    currentScreen = GAMEPLAY;
+                }
+            } break;
             case TITLE: 
             {
                 if (press_start())
@@ -363,6 +406,8 @@ int main(void)
             } break;
             case GAMEPLAY:
             {
+                sprintf(highscore, "BEST: %d", highscoreInt);
+
                 failure = ALIVE;
                 gesture_movement = false;
                 // add control stuff
@@ -426,7 +471,6 @@ int main(void)
                         case DUPE_DOTTY: PlaySound(potion_sound); break;
                         case OUCHIE: {
                             // game over
-                            reset_dotty();
                             PlaySound(ouchie);
                             currentScreen = GAMEOVER;
                             break;
@@ -434,11 +478,32 @@ int main(void)
                         default: break;
                     }
                 }
+                
+                if ((rand() % 2000 == 1) and (potion.getX() < 0)){
+                    potion.update();
+                }
+                if ((rand() % 2500 == 1) and (dupepotion.getX() < 0)){
+                    dupepotion.update();
+                }
+                if (rand() % 500 == 1){
+                    if (doompotion.getX() < 0){
+                        // not already in screen, we have to add it
+                        doompotion.update();
+                    } else{
+                        // we have to remove it
+                        doompotion.remove();
+                    }
+                }
             } break;
             case GAMEOVER: 
             {
+                if (eaten > highscoreInt) highscoreInt = eaten;
+
+                SaveStorageValue(0, highscoreInt);  // stores highscore integer in storage.data in an Int32 format
+
                 if (press_start())
                 {
+                    reset_dotty();
                     currentScreen = GAMEPLAY;
                 }  
             } break;
@@ -505,31 +570,15 @@ int main(void)
                             DrawTexture(dotty_front, dupedotty.getX(), dupedotty.getY(), WHITE);
                         }
                     }
-        
-                    if ((rand() % 2000 == 1) and (potion.getX() < 0)){
-                        potion.update();
-                    }
-                    if ((rand() % 2500 == 1) and (dupepotion.getX() < 0)){
-                        dupepotion.update();
-                    }
-                    if (rand() % 500 == 1){
-                        if (doompotion.getX() < 0){
-                            // not already in screen, we have to add it
-                            doompotion.update();
-                        } else{
-                            // we have to remove it
-                            doompotion.remove();
-                        }
-                    }
                     
                     char eaten_cchar[100000];
                     sprintf(eaten_cchar, "%d", eaten);
-                    DrawText(eaten_cchar, 20, GetScreenHeight() - 40, 20, DARKGRAY);
+                    DrawText(eaten_cchar, 20, GetScreenHeight() - 80, 20, DARKGRAY);
+                    DrawText(highscore,   20, GetScreenHeight() - 40, 20, DARKGRAY);
 
                 } break;
                 case GAMEOVER: 
                 {
-                    // TODO: make it so that it says "no dont bonk the two dottys together" or "no dont hit the edge of the screen"
                     const char* gameover_message = "What happened? How did you die?";
                     ClearBackground(DARKGRAY);
                     Texture2D &oopsie_texture = oopsies_what;
@@ -549,7 +598,7 @@ int main(void)
                     // DrawRectangle(0, 0, screenWidth, screenHeight, GRAY);
                     ClearBackground(LIGHTGRAY);
                     DrawText("PAUSED", (screenWidth / 2) - 75, (screenHeight / 2.75), 40, BLACK);
-                    DrawText("press the pause key to continue", 240, (screenHeight / 2), 20, BLACK);
+                    DrawText("pause again to continue", 282, (screenHeight / 2), 20, BLACK);
                 } break;
                 default: break;
             }
