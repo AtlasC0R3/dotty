@@ -2,6 +2,8 @@
 #include "potion.h"
 #include <math.h>
 #include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 Potion::Potion(int type)
 {
     width = 64;

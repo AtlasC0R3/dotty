@@ -1,0 +1,29 @@
+GLFW_ICON ICON "resources/logo/icon.ico"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+	//BLOCK "080904E4" 	// English UK
+    BLOCK "040904E4"	// English US
+    BEGIN
+	  //VALUE "CompanyName", "atlas_core"
+      VALUE "FileDescription", "Dotty game"
+      VALUE "FileVersion", "1.0.0"
+      VALUE "InternalName", "Dotty"
+      VALUE "LegalCopyright", "(c) 2021 atlas_core"
+      //VALUE "OriginalFilename", "Dotty.exe"
+      VALUE "ProductName", "Dotty"
+      VALUE "ProductVersion", "1.0.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+	//VALUE "Translation", 0x809, 1252	// English UK
+    VALUE "Translation", 0x409, 1252	// English US
+  END
+END
+
+// Based off of raylib's resource file. Thanks, raysan5!

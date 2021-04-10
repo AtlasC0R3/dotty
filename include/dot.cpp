@@ -2,6 +2,8 @@
 #include "dot.h"
 #include <math.h>
 #include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 Dot::Dot(int index)
 {
     width = 64;

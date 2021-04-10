@@ -2,7 +2,7 @@
 #
 #   raylib makefile for Android project (APK building)
 #
-#   Copyright (c) 2017 Ramon Santamaria (@raysan5)
+#   Copyright (c) 2017-2020 Ramon Santamaria (@raysan5)
 #
 #   This software is provided "as-is", without any express or implied warranty. In no event
 #   will the authors be held liable for any damages arising from the use of this software.
@@ -23,24 +23,43 @@
 
 # Define required raylib variables
 PLATFORM               ?= PLATFORM_ANDROID
-RAYLIB_PATH            ?= ..\..
+RAYLIB_PATH            ?= C:\raylib\android
 
 # Define Android architecture (armeabi-v7a, arm64-v8a, x86, x86-64) and API version
-ANDROID_ARCH           ?= ARM
-ANDROID_API_VERSION     = 21
+# Starting in 2019 using ARM64 is mandatory for published apps,
+# Starting on August 2020, minimum required target API is Android 10 (API level 29)
+ANDROID_ARCH           ?= ARM64
+ANDROID_API_VERSION     = 23
+
+# Android required path variables
+# NOTE: Starting with Android NDK r21, no more toolchain generation is required, NDK is the toolchain on itself
+ifeq ($(OS),Windows_NT)
+    ANDROID_NDK = C:/android-ndk-r21e
+    ANDROID_TOOLCHAIN = $(ANDROID_NDK)/toolchains/llvm/prebuilt/windows-x86_64
+else
+    ANDROID_NDK ?= /usr/lib/android/ndk
+    ANDROID_TOOLCHAIN = $(ANDROID_NDK)/toolchains/llvm/prebuilt/linux-x86_64
+endif
+
 ifeq ($(ANDROID_ARCH),ARM)
-    ANDROID_ARCH_NAME   = armeabi-v7a
+    ANDROID_ARCH_NAME = armeabi-v7a
 endif
 ifeq ($(ANDROID_ARCH),ARM64)
-    ANDROID_ARCH_NAME   = arm64-v8a
+    ANDROID_ARCH_NAME = arm64-v8a
+endif
+ifeq ($(ANDROID_ARCH),x86)
+    ANDROID_ARCH_NAME = i686
+endif
+ifeq ($(ANDROID_ARCH),x86_64)
+    ANDROID_ARCH_NAME = x86_64
 endif
 
 # Required path variables
-# NOTE: JAVA_HOME must be set to JDK
-JAVA_HOME              ?= C:/JavaJDK
+# NOTE: JAVA_HOME must be set to JDK (using OpenJDK 13)
+JAVA_HOME              ?= C:/open-jdk
 ANDROID_HOME            = C:/android-sdk
-ANDROID_TOOLCHAIN       = C:/android_toolchain_$(ANDROID_ARCH)_API$(ANDROID_API_VERSION)
-ANDROID_BUILD_TOOLS     = $(ANDROID_HOME)/build-tools/28.0.1
+ANDROID_TOOLCHAIN       = C:/android-ndk-r21e/toolchains/llvm/prebuilt/windows-x86_64
+ANDROID_BUILD_TOOLS     = $(ANDROID_HOME)/build-tools/29.0.3
 ANDROID_PLATFORM_TOOLS  = $(ANDROID_HOME)/platform-tools
 
 # Android project configuration variables
@@ -48,7 +67,7 @@ PROJECT_NAME           ?= raylib_game
 PROJECT_LIBRARY_NAME   ?= main
 PROJECT_BUILD_PATH     ?= android.$(PROJECT_NAME)
 PROJECT_RESOURCES_PATH ?= resources
-PROJECT_SOURCE_FILES   ?= raylib_game.c
+PROJECT_SOURCE_FILES   ?= src/main.cpp
 
 # Some source files are placed in directories, when compiling to some 
 # output directory other than source, that directory must pre-exist.
@@ -57,14 +76,14 @@ PROJECT_SOURCE_FILES   ?= raylib_game.c
 PROJECT_SOURCE_DIRS = $(sort $(dir $(PROJECT_SOURCE_FILES)))
 
 # Android app configuration variables
-APP_LABEL_NAME ?= rGame
-APP_COMPANY_NAME ?= raylib
-APP_PRODUCT_NAME ?= rgame
+APP_LABEL_NAME ?= Dotty
+APP_COMPANY_NAME ?= atlascore
+APP_PRODUCT_NAME ?= Dotty
 APP_VERSION_CODE ?= 1
 APP_VERSION_NAME ?= 1.0
-APP_ICON_LDPI ?= $(RAYLIB_PATH)\logo\raylib_36x36.png
-APP_ICON_MDPI ?= $(RAYLIB_PATH)\logo\raylib_48x48.png
-APP_ICON_HDPI ?= $(RAYLIB_PATH)\logo\raylib_72x72.png
+APP_ICON_LDPI ?= resources\images\dotty\base.png
+APP_ICON_MDPI ?= resources\images\dotty\base.png
+APP_ICON_HDPI ?= resources\images\dotty\base.png
 APP_SCREEN_ORIENTATION ?= landscape
 APP_KEYSTORE_PASS ?= raylib
 
@@ -81,13 +100,12 @@ ifeq ($(RAYLIB_LIBTYPE),SHARED)
 endif
 
 # Compiler and archiver
-# NOTE: GCC is being deprecated in Android NDK r16
 ifeq ($(ANDROID_ARCH),ARM)
-    CC = $(ANDROID_TOOLCHAIN)/bin/arm-linux-androideabi-clang
+    CC = $(ANDROID_TOOLCHAIN)/bin/armv7a-linux-androideabi$(ANDROID_API_VERSION)-clang
     AR = $(ANDROID_TOOLCHAIN)/bin/arm-linux-androideabi-ar
 endif
 ifeq ($(ANDROID_ARCH),ARM64)
-    CC = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android-clang
+    CC = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android$(ANDROID_API_VERSION)-clang
     AR = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android-ar
 endif
 
@@ -106,7 +124,7 @@ CFLAGS += -Wall -Wa,--noexecstack -Wformat -Werror=format-security -no-canonical
 CFLAGS += -DANDROID -DPLATFORM_ANDROID -D__ANDROID_API__=$(ANDROID_API_VERSION)
 
 # Paths containing required header files
-INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external/android/native_app_glue
+INCLUDE_PATHS = -I. -I$(RAYLIB_PATH)/src -I$(RAYLIB_PATH)/src/external/android/native_app_glue include/*.cpp
 
 # Linker options
 LDFLAGS = -Wl,-soname,lib$(PROJECT_LIBRARY_NAME).so -Wl,--exclude-libs,libatomic.a 
@@ -226,7 +244,7 @@ generate_android_manifest:
 # Generate storekey for APK signing: $(PROJECT_NAME).keystore
 # NOTE: Configure here your Distinguished Names (-dname) if required!
 generate_apk_keystore: 
-	if not exist $(PROJECT_BUILD_PATH)/$(PROJECT_NAME).keystore $(JAVA_HOME)/bin/keytool -genkeypair -validity 1000 -dname "CN=$(APP_COMPANY_NAME),O=Android,C=ES" -keystore $(PROJECT_BUILD_PATH)/$(PROJECT_NAME).keystore -storepass $(APP_KEYSTORE_PASS) -keypass $(APP_KEYSTORE_PASS) -alias $(PROJECT_NAME)Key -keyalg RSA
+	if not exist $(PROJECT_BUILD_PATH)/$(PROJECT_NAME).keystore $(JAVA_HOME)/bin/keytool -genkeypair -validity 10000 -dname "CN=$(APP_COMPANY_NAME),O=Android,C=ES" -keystore $(PROJECT_BUILD_PATH)/$(PROJECT_NAME).keystore -storepass $(APP_KEYSTORE_PASS) -keypass $(APP_KEYSTORE_PASS) -alias $(PROJECT_NAME)Key -keyalg RSA
 
 # Config project package and resource using AndroidManifest.xml and res/values/strings.xml
 # NOTE: Generates resources file: src/com/$(APP_COMPANY_NAME)/$(APP_PRODUCT_NAME)/R.java
@@ -274,7 +292,7 @@ zipalign_project_apk_package:
 # Install $(PROJECT_NAME).apk to default emulator/device
 # NOTE: Use -e (emulator) or -d (device) parameters if required
 install:
-	$(ANDROID_PLATFORM_TOOLS)/adb install --abi $(ANDROID_ARCH_NAME) -rds $(PROJECT_NAME).apk
+	$(ANDROID_PLATFORM_TOOLS)/adb install $(PROJECT_NAME).apk
     
 # Check supported ABI for the device (armeabi-v7a, arm64-v8a, x86, x86_64)
 check_device_abi:
@@ -287,7 +305,7 @@ logcat:
     
 # Install and monitorize $(PROJECT_NAME).apk to default emulator/device
 deploy:
-	$(ANDROID_PLATFORM_TOOLS)/adb install -r $(PROJECT_NAME).apk
+	$(ANDROID_PLATFORM_TOOLS)/adb install $(PROJECT_NAME).apk
 	$(ANDROID_PLATFORM_TOOLS)/adb logcat -c
 	$(ANDROID_PLATFORM_TOOLS)/adb logcat raylib:V *:S
 
