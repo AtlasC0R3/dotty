@@ -27,7 +27,7 @@
 PROJECT_NAME       ?= Dotty
 RAYLIB_VERSION     ?= 3.0.0
 RAYLIB_API_VERSION ?= 3
-RAYLIB_PATH        ?= ../..
+RAYLIB_PATH        ?= C:/raylib/web
 
 # Define default options
 
@@ -117,10 +117,10 @@ endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Emscripten required variables
     EMSDK_PATH         ?= C:/emsdk
-    EMSCRIPTEN_PATH    ?= $(EMSDK_PATH)/fastcomp/emscripten
-    CLANG_PATH          = $(EMSDK_PATH)/fastcomp/bin
-    PYTHON_PATH         = $(EMSDK_PATH)/python/3.7.4_64bit
-    NODE_PATH           = $(EMSDK_PATH)/node/12.9.1_64bit/bin
+    EMSCRIPTEN_PATH    ?= $(EMSDK_PATH)/upstream/emscripten
+    CLANG_PATH          = $(EMSDK_PATH)/upstream/bin
+    PYTHON_PATH         = $(EMSDK_PATH)/python/3.9.2-1_64bit
+    NODE_PATH           = $(EMSDK_PATH)/node/14.15.5_64bit/bin
     export PATH         = $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH);C:\raylib\MinGW\bin:$$(PATH)
 endif
 
@@ -361,11 +361,15 @@ ifeq ($(PLATFORM),PLATFORM_RPI)
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # Libraries for web (HTML5) compiling
-    LDLIBS = $(RAYLIB_RELEASE_PATH)/libraylib.bc
+    LDLIBS = $(RAYLIB_RELEASE_PATH)/libraylib.h
 endif
 
 # Define all source files required
-PROJECT_SOURCE_FILES ?= src/*.cpp include/*.cpp
+ifeq ($(PLATFORM),PLATFORM_WEB)
+    PROJECT_SOURCE_FILES ?= src/main.cpp include/dot.cpp include/player.cpp include/potion.cpp 
+else
+    PROJECT_SOURCE_FILES ?= src/*.cpp include/*.cpp
+endif
 
 # Define all object files from source files
 OBJS = $(patsubst %.c, %.o, $(PROJECT_SOURCE_FILES))

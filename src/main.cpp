@@ -1,7 +1,9 @@
 // C includes
 #include "raylib.h"
 
+#ifdef PLATFORM_DESKTOP
 #include <dirent.h>
+#endif
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
