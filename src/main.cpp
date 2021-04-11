@@ -32,7 +32,8 @@ Potion potion = 0;
 Potion dupepotion = 1;
 Potion doompotion = 2;
 bool dupe = false;
-int highscoreInt = LoadStorageValue(0);
+
+int highscoreInt;
 char highscore[32];
 
 int dot_amount = 1;
@@ -66,7 +67,9 @@ void reset_dotty(void){
     eaten = 0;
     dupe = false;
     dot_amount = 1;
-    highscoreInt = LoadStorageValue(0);
+    #if defined(PLATFORM_DESKTOP)
+        highscoreInt = LoadStorageValue(0);
+    #endif
 
     reset_dots();
     potion.remove();
@@ -241,7 +244,7 @@ bool cont_exit(void){
     for( a = -1; a < 9; a = a + 1 ){
         if (IsGamepadAvailable(a)){
             // there's a gamepad!
-            if (IsGamepadButtonPressed(a, 14) and IsWindowFocused()){
+            if ((IsGamepadButtonPressed(a, 14) or (IsGamepadButtonDown(a, 13) and IsGamepadButtonDown(a, 15))) and IsWindowFocused()){
                 exit = true;
                 if (debug_prints) printf("Home button pressed on controller name %s: exiting...\n", GetGamepadName(a));
             }
@@ -313,10 +316,13 @@ int main(void)
 {
     // TODO: make a splash screen saying who made the game (me)
 
-    if (!opendir("resources")) {
-        printf("Could not find the resources/ folder. This will render the game unplayable.\n");
-        exit(1);
-    }
+    #if defined(PLATFORM_DESKTOP)
+        if (!opendir("resources")) {
+            printf("Could not find the resources/ folder. This will render the game unplayable.\n");
+            exit(1);
+        }
+        SetWindowIcon(LoadImage("resources/images/logo/icon.ico"));
+    #endif
     
     if (extreme_debug_prints) debug_prints = true;
 
@@ -325,7 +331,7 @@ int main(void)
     const int screenHeight = 450;
     InitWindow(screenWidth, screenHeight, "Dotty");
 
-    SetWindowIcon(LoadImage("resources/images/logo/icon.ico"));
+    int framesCounter = 0;  // used to show title screen after 2 seconds
 
     // Initialize audio
       InitAudioDevice();
@@ -344,6 +350,7 @@ int main(void)
       Texture2D dotty_base = LoadTexture("resources/images/dotty/base.png");
       Texture2D dotty_front = LoadTexture("resources/images/dotty/front.png");
       Texture2D dotty_clone = LoadTexture("resources/images/dotty/clone.png");
+      Texture2D dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
     // Up-down textures
       Image dotty_down_image = LoadImage("resources/images/dotty/down.png");
       Image *dotty_up_image = &dotty_down_image;
@@ -372,8 +379,8 @@ int main(void)
     // Likely unused textures
     //   Texture2D dotty_blink = LoadTexture("resources/images/dotty/blink.png");
     //   Texture2D dotty_half = LoadTexture("resources/images/dotty/half-blink.png");
-    //   Texture2D dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
     //--------------------------------------------------------------------------------------
+
 
     GameScreen currentScreen = SPLASH;
 
@@ -391,10 +398,11 @@ int main(void)
         {
             case SPLASH: 
             {
-                currentScreen = TITLE; break;
-                if (press_start())
+                framesCounter++;    // Count frames
+
+                if (framesCounter > 90)
                 {
-                    currentScreen = GAMEPLAY;
+                    currentScreen = TITLE;
                 }
             } break;
             case TITLE: 
@@ -499,7 +507,9 @@ int main(void)
             {
                 if (eaten > highscoreInt) highscoreInt = eaten;
 
-                SaveStorageValue(0, highscoreInt);  // stores highscore integer in storage.data in an Int32 format
+                #if defined(PLATFORM_DESKTOP)
+                    SaveStorageValue(0, highscoreInt);  // stores highscore integer in storage.data in an Int32 format
+                #endif
 
                 if (press_start())
                 {
@@ -521,9 +531,17 @@ int main(void)
 
         switch(currentScreen) 
             {
+                case SPLASH: 
+                {
+                    ClearBackground(DARKGRAY);
+                    // TODO: Draw LOGO screen here!
+                    DrawTexture(dotty_sleep, (screenWidth - dotty_sleep.width) / 2, (screenHeight  - dotty_sleep.height) / 2.25, WHITE);
+                    DrawText("made with raylib", 20, screenHeight - 40, 20, WHITE);
+                    
+                } break;
                 case TITLE: 
                 {
-                    DrawRectangle(0, 0, screenWidth, screenHeight, GRAY);
+                    ClearBackground(GRAY);
                     DrawTexture(splash_logo, (screenWidth / 2) - splash_logo.width / 2, (screenHeight / 2) - splash_logo.height * 0.75, GRAY);
                     DrawText("press any key", 290, screenHeight * 0.75, 30, BLACK);
                     
@@ -608,6 +626,30 @@ int main(void)
          //----------------------------------------------------------------------------------
 
     }
+
+    // Unload stuff
+    UnloadTexture(splash_logo);
+    UnloadTexture(dotty_base);
+    UnloadTexture(dotty_front);
+    UnloadTexture(dotty_clone);
+    UnloadTexture(dotty_down);
+    UnloadTexture(dotty_up);
+    UnloadTexture(dotty_right);
+    UnloadTexture(dotty_left);
+    UnloadTexture(dot);
+    UnloadTexture(potion_dot);
+    UnloadTexture(potion_dupe);
+    UnloadTexture(potion_doom);
+    UnloadTexture(oopsies_screenedge);
+    UnloadTexture(oopsies_clonecollision);
+    UnloadTexture(oopsies_what);
+    UnloadTexture(oopsies_doom);
+    UnloadSound(ouchie);
+    UnloadSound(obtained);
+    UnloadSound(potion_sound);
+    UnloadSound(clone_ouchie);
+    // ... is this going to cause a memory leak?
+    
 
     CloseWindow();
 

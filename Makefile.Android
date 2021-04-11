@@ -81,9 +81,9 @@ APP_COMPANY_NAME ?= atlascore
 APP_PRODUCT_NAME ?= Dotty
 APP_VERSION_CODE ?= 1
 APP_VERSION_NAME ?= 1.0
-APP_ICON_LDPI ?= resources\images\dotty\base.png
-APP_ICON_MDPI ?= resources\images\dotty\base.png
-APP_ICON_HDPI ?= resources\images\dotty\base.png
+APP_ICON_LDPI ?= resources\logo\android-icon.png
+APP_ICON_MDPI ?= resources\logo\android-icon.png
+APP_ICON_HDPI ?= resources\logo\android-icon.png
 APP_SCREEN_ORIENTATION ?= landscape
 APP_KEYSTORE_PASS ?= raylib
 
