@@ -171,7 +171,11 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
 endif
 
 # Define default make program: Mingw32-make
-MAKE = mingw32-make
+
+MAKE = make
+ifeq ($(PLATFORM_OS),WINDOWS)
+    MAKE = mingw32-make
+endif
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),LINUX)

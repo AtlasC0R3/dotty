@@ -22,8 +22,8 @@ well should i explain what a faq is
 ### I want to port this project, but can't find the font that this uses
 This uses raylib's default font, which is its own font. (that definitely is a sentence.) There is a very similar font called "Grixel Acme 9" ([link](https://www.dafont.com/grixel-acme-9.font), [official grixel website](https://www.grixel.gr/)) which you can use.
 
-### When using the Android version, it just crashes/Dotty doesn't open on Android.
-I have the same issue with my LG phone, so far I can't find what exactly is wrong.
+### This doesn't work on Android!
+I can't exactly pinpoint what's wrong with this code and the way raylib's default Makefiles compile the \*.apk. Only one out of my three Android devices worked (a Samsung Galaxy S6 Edge running LineageOS 17.1 or Android 10). If you can get it to compile and work for you, great. But for now, I'll focus on making this game work on desktop. If someone wants to fork this project or create a port for Android/iOS~~/Palm~~, you can use their port/fork.
 
 ### I'd like to implement a new item in this game/I have an idea for this game
 short answer, no.

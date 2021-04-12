@@ -37,14 +37,8 @@
             "type": "process",
             "command": "make",
             "args": [
-                "PLATFORM=PLATFORM_DESKTOP",
+                "PLATFORM=PLATFORM_ANDROID",
             ],
-            "linux": {
-                "command": "./build-release.sh",
-                "args": [
-                    "PLATFORM_DESKTOP",
-                ],
-            },
             "windows": {
                 "command": "C:/mingw/mingw32/bin/mingw32-make.exe",
                 "args": [
