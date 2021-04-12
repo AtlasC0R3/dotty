@@ -14,7 +14,7 @@ This game uses [raylib](https://www.raylib.com/) as a graphics/sound/input libra
 ([Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows), [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS), [Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux), [etc.](https://github.com/raysan5/raylib/wiki))
 then use make (or mingw32-make, or tcc, asjhfggjzad) to compile.
 
-*Tested on Windows 10, Debian and Android 10 (LineageOS 17.1 on a Samsung Galaxy S6 Edge). [Note that Android builds may or may not work for you](https://github.com/AtlasC0R3/dotty#this-doesnt-work-on-android).*
+*Tested on Windows 10, Debian and Android 10 (LineageOS 17.1 on a Samsung Galaxy S6 Edge). [Note that Android builds may or may not work for you](https://github.com/AtlasC0R3/dotty#this-doesnt-work-on-android-dotty-keeps-closing).*
 
 ## F.A.Q.
 well should i explain what a faq is
