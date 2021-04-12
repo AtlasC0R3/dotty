@@ -499,7 +499,7 @@ int main(void)
                     if (doompotion.getX() < 0){
                         // not already in screen, we have to add it
                         doompotion.update();
-                        while (dotty.getRelativeX() > doompotion.getX() && dotty.getRelativeX() < doompotion.getX() + 64 && dotty.getRelativeY() > doompotion.getY() && dotty.getRelativeY() < doompotion.getY() + 64 or
+                        while (((dotty.getRelativeX() > doompotion.getX() && dotty.getRelativeX() < doompotion.getX() + 64 && dotty.getRelativeY() > doompotion.getY()) && (dotty.getRelativeY() < doompotion.getY() + 64)) or
                            (dupe and (dupedotty.getRelativeX() > doompotion.getX() && dupedotty.getRelativeX() < doompotion.getX() + 64 && dupedotty.getRelativeY() > doompotion.getY() && dupedotty.getRelativeY() < doompotion.getY() + 64))){
                             // instant death. that'd be pretty unfair.
                             doompotion.update();
