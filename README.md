@@ -31,3 +31,7 @@ short answer, no.
 Long answer: Dotty was meant to be a simple, high-score game, that anyone could pick up and understand how to play 
 (left, right, up, down. get all dots, get potion upgrades, avoid edge of screen, avoid death potion, avoid hitting clone). If I were to add new ideas, then it wouldn't be as simple.
 I definitely could add new items, but that would require a new version/branch of Dotty.
+
+
+
+Copyright (C) 2021 atlas_core
