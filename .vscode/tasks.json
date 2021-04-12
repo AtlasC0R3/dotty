@@ -37,7 +37,7 @@
             "type": "process",
             "command": "make",
             "args": [
-                "PLATFORM=PLATFORM_ANDROID",
+                "PLATFORM=PLATFORM_DESKTOP",
             ],
             "windows": {
                 "command": "C:/mingw/mingw32/bin/mingw32-make.exe",
