@@ -753,7 +753,13 @@ int main(void)
                                 case 17: gameover_message = "Okay, I'm not joking. Stop."; break;
                                 case 18: gameover_message = "You're forcing my hand."; break;
                                 case 19: gameover_message = "Stop, I'm serious. This is your last chance."; break;
-                                case 20: CloseWindow(); break;
+                                case 20: gameover_message = "OLOLO POOLOA"; break;
+                                case 21: {
+                                    #if defined(PLATFORM_DESKTOP)
+                                        SaveStorageValue(0, 1);
+                                    #endif
+                                    CloseWindow();
+                                } break;
                                 default: break;
                             }
                         }
