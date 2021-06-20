@@ -35,7 +35,9 @@ bool old_up;
 bool old_down;
 bool has_moved = false;
 bool vertically_collided = false;
+bool nightmare = false;  // enable this to experience pain
 int hasnt_moved_counter = 0;
+int random_counter;
 
 bool has_saved = false;
 
@@ -493,6 +495,7 @@ int main(void)
         #endif
 
         vel = get_velocity();
+        if(nightmare) vel *= 10;
 
         switch(currentScreen)
         {
@@ -622,6 +625,11 @@ int main(void)
             } break;
             case GAMEOVER: 
             {
+                if (nightmare){  // The user didn't listen.
+                    has_moved = false;
+                    hasnt_moved_counter = 21;
+                    random_counter = 1;
+                }
                 if (eaten > highscoreInt){
                     highscoreInt = eaten;
                     #if defined(PLATFORM_DESKTOP)
@@ -635,6 +643,9 @@ int main(void)
                 if (press_start())
                 {
                     if(not has_moved) hasnt_moved_counter+=1;
+                    if(hasnt_moved_counter == 22) nightmare = true;
+                    if(hasnt_moved_counter == 20)
+                    random_counter = rand() % 3 + 1;
                     reset_dotty(screenWidth, screenHeight);
                     if(do_pause()) pressed_pause_to_continue = true;
                     currentScreen = GAMEPLAY;
@@ -755,11 +766,16 @@ int main(void)
                                 case 19: gameover_message = "Stop, I'm serious. This is your last chance."; break;
                                 case 20: gameover_message = "OLOLO POOLOA"; break;
                                 case 21: {
-                                    #if defined(PLATFORM_DESKTOP)
-                                        SaveStorageValue(0, 1);
-                                    #endif
-                                    CloseWindow();
+                                    gameover_message = "You made me do this. :)";
+                                    if(random_counter == 1){
+                                        // You're fricked :)
+                                        #if defined(PLATFORM_DESKTOP)
+                                            SaveStorageValue(0, 1);
+                                        #endif
+                                        CloseWindow();
+                                    }
                                 } break;
+                                case 22: gameover_message = "â”¬â”€â”¬ ãƒŽ( ã‚œ-ã‚œãƒŽ)"; break;
                                 default: break;
                             }
                         }
