@@ -34,6 +34,8 @@ bool old_right;
 bool old_up;
 bool old_down;
 bool has_moved = false;
+bool vertically_collided = false;
+int hasnt_moved_counter = 0;
 
 bool has_saved = false;
 
@@ -88,6 +90,7 @@ void reset_dotty(const int screenWidth, const int screenHeight){
     eaten = 0;
     dupe = false;
     has_moved = false;
+    vertically_collided = false;
     #if defined(PLATFORM_DESKTOP)
         highscoreInt = LoadStorageValue(0);
     #endif
@@ -123,7 +126,8 @@ bool check_dotty_collision(double x, double y){
 };
 
 bool check_player_window_collision(){
-    return (((dotty.getX() + 64 >= screenWidth)  or (dotty.getX() <= 0)) or ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0)));
+    if(dotty.getY() + 64 >= screenHeight) vertically_collided = true;
+    return (((dotty.getX() + 64 >= screenWidth) or (dotty.getX() <= 0)) or ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0)));
 };
 
 void checkPlayerCollision(const int screenWidth, const int screenHeight)
@@ -630,6 +634,7 @@ int main(void)
 
                 if (press_start())
                 {
+                    if(not has_moved) hasnt_moved_counter+=1;
                     reset_dotty(screenWidth, screenHeight);
                     if(do_pause()) pressed_pause_to_continue = true;
                     currentScreen = GAMEPLAY;
@@ -726,9 +731,35 @@ int main(void)
                         case DOOM_POTION:     gameover_message = "You drank the death potion.";               oopsie_texture = oopsies_doom;           break;
                         default: break;
                     }
-                    if (not has_moved) gameover_message = "You hit the window borders.\nYou can move using the arrow or WASD keys.\n\nYou can also move using the left thumbstick\nor D-Pad if you are using a controller.";
+                    if (not has_moved){
+                        if(hasnt_moved_counter >= 0 and hasnt_moved_counter <= 1) gameover_message  = "You hit the window borders.\nYou can move using the arrow or WASD keys.\n\nYou can also move using the left thumbstick\nor D-Pad if you are using a controller.";
+                        else{
+                            switch (hasnt_moved_counter){
+                                case 2: gameover_message  = "Hey, you're supposed to move!"; break;
+                                case 3: gameover_message  = "MOVE USING THE ARROW KEYS OR THE WASD KEYS!"; break;
+                                case 4: gameover_message  = "You're just messing with me, aren't you."; break;
+                                case 5: gameover_message  = "Stop that."; break;
+                                case 6: gameover_message  = "I said, stop that."; break;
+                                case 7: gameover_message  = "ENOUGH!"; break;
+                                case 8: gameover_message  = "You're pissing me off..!"; break;
+                                case 9: gameover_message  = "HEY. STOP THAT. YOU'RE HURTING A POOR, INNOCENT LITTLE SQUARE."; break;
+                                case 10: gameover_message = "You're a masochist..."; break;
+                                case 11: gameover_message = "Come on, man. Give Dotty a break."; break;
+                                case 12: gameover_message = "Are you just doing this to see what I have to say?"; break;
+                                case 13: gameover_message = "Please get help."; break;
+                                case 14: gameover_message = "Dots. Dotty hungry. Dot is Dotty food. Dotty want food.\nDotty want dot. You control Dotty. You give Dotty dot."; break;
+                                case 15: gameover_message = "Is the pizza here yet?"; break;
+                                case 16: gameover_message = "Man, I feel bad for Dotty."; break;
+                                case 17: gameover_message = "Okay, I'm not joking. Stop."; break;
+                                case 18: gameover_message = "You're forcing my hand."; break;
+                                case 19: gameover_message = "Stop, I'm serious. This is your last chance."; break;
+                                case 20: CloseWindow(); break;
+                                default: break;
+                            }
+                        }
+                    }
                     // if (not has_moved) gameover_message = "lmao fat fuck";
-                    if (((GetScreenHeight() - dotty.getY()) > 64 and (dotty.getY() > 0)) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
+                    if (((GetScreenHeight() - dotty.getY()) > 64 and (dotty.getY() > 0) and vertically_collided) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
                     DrawText(gameover_message, 20, 80, 20, WHITE);
                     DrawTexture(oopsie_texture, screenWidth - 512, screenHeight - 256, DARKGRAY);
                     DrawText("press any key to continue", 20, screenHeight - 40, 20, WHITE);
