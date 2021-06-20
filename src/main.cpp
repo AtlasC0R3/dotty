@@ -42,7 +42,7 @@ int screenHeight = 450;
 int screenWidthBeforeFullscreen;
 int screenHeightBeforeFullscreen;
 
-Dot dots[8] = {};  // Welcome to hell!
+Dot dots[8] = {};
 Potion potion;
 Potion dupepotion;
 Potion doompotion;
