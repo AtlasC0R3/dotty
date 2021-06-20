@@ -4,17 +4,19 @@ class Dot
 {
   private:
 	double dot_x;
-    double dot_y;
-    int width;
-    int height;
+  double dot_y;
+  int width;
+  int height;
+  int screen_width;
+  int screen_height;
 	
   public:
-	Dot(int index);
+	Dot(const int screenWidth, const int screenHeight);
 	double getX();
 	double getY();
   int    getWidth();
   int    getHeight();
-  void   updatePosition();
+  void   updatePosition(const int screenWidth, const int screenHeight);
   void   remove();
 
 };

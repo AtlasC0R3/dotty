@@ -25,9 +25,9 @@
 
 # Define required raylib variables
 PROJECT_NAME       ?= Dotty
-RAYLIB_VERSION     ?= 3.0.0
+RAYLIB_VERSION     ?= 3.7.0
 RAYLIB_API_VERSION ?= 3
-RAYLIB_PATH        ?= C:/raylib/web
+RAYLIB_PATH        ?= C:/raylib/raylib
 
 # Define default options
 

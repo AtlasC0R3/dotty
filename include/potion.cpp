@@ -4,14 +4,13 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <stdio.h>
-Potion::Potion(int type)
+Potion::Potion()
 {
     width = 64;
     height = 64;
     x = rand()% 660 + 20;
     y = 0 - height;
     available = true;
-    
 }
 
 double Potion::getX()
@@ -34,12 +33,19 @@ int Potion::getHeight()
     return height;
 }
 
-void Potion::update()
+void Potion::randomize_position(const int screenWidth, const int screenHeight)
 {
-    if (available){
-        x = rand() % 700;
-        y = rand() % 350;
-        type = 1;
+    while (true){
+        x = rand() % (screenWidth - 96);
+        y = rand() % (screenHeight - 96);
+        if (x >= 96 and y >= 96) break;
+    }
+}
+
+void Potion::update(const int screenWidth, const int screenHeight)
+{
+    if (available and x < 0){
+        randomize_position(screenWidth, screenHeight);
     } else{
         remove();
     }
