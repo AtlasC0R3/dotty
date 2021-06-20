@@ -705,7 +705,6 @@ int main(void)
                     
                     char eaten_cchar[512];
                     sprintf(eaten_cchar, "%d", eaten);
-                    sprintf(eaten_cchar, "%lf", ((dotty.getY() + 64) - screenHeight));
                     const char* bottom_text;
                     #if defined(PLATFORM_DESKTOP)
                         bottom_text = highscore;
