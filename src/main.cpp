@@ -122,6 +122,10 @@ bool check_dotty_collision(double x, double y){
     or check_collision_2d(dupedotty.getX(), dupedotty.getY(), x, y));  // Dupe Dotty collided
 };
 
+bool check_player_window_collision(){
+    return (((dotty.getX() + 64 >= screenWidth)  or (dotty.getX() <= 0)) or ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0)));
+};
+
 void checkPlayerCollision(const int screenWidth, const int screenHeight)
 {
     for (int i = 0; i < 8; i++)
@@ -435,6 +439,11 @@ int main(void)
         screenWidth = GetScreenWidth();
         screenHeight = GetScreenHeight();
 
+        if(IsWindowResized()){
+            if (screenWidth < 800)  SetWindowSize(800, GetScreenHeight());
+            if (screenHeight < 450) SetWindowSize(GetScreenWidth(), 450);
+        }
+
         #if defined(PLATFORM_DESKTOP)
             if(IsKeyPressed(KEY_F9)){
                 if(IsWindowFullscreen()){
@@ -519,7 +528,16 @@ int main(void)
                 }
 
                 if (currentGesture >= 16 and currentGesture <= 128) gesture_movement = true;
-        
+
+                if(IsWindowResized()){
+                    if(check_player_window_collision()){
+                        dotty.setX(50);
+                        dotty.setY(50);
+                        left = false;
+                        right = true;
+                    }
+                }
+
                 if (left or right or up or down or gesture_movement){
                     velX = 0;
                     velY = 0;
@@ -544,8 +562,7 @@ int main(void)
                 else if (down  or velX > 0) velY = vel;
 
                 // check if player is colliding with the window borders
-                if (((dotty.getX() + 64 >= screenWidth)  or (dotty.getX() <= 0)) or 
-                    ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0))){
+                if (check_player_window_collision()){
                     collision_type = OUCHIE;
                     failure = SCREEN_EDGE;
                 }
@@ -688,6 +705,7 @@ int main(void)
                     
                     char eaten_cchar[512];
                     sprintf(eaten_cchar, "%d", eaten);
+                    sprintf(eaten_cchar, "%lf", ((dotty.getY() + 64) - screenHeight));
                     const char* bottom_text;
                     #if defined(PLATFORM_DESKTOP)
                         bottom_text = highscore;
@@ -711,6 +729,7 @@ int main(void)
                     }
                     if (not has_moved) gameover_message = "You hit the window borders.\nYou can move using the arrow or WASD keys.\n\nYou can also move using the left thumbstick\nor D-Pad if you are using a controller.";
                     // if (not has_moved) gameover_message = "lmao fat fuck";
+                    if (((GetScreenHeight() - dotty.getY()) > 64 and (dotty.getY() > 0)) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
                     DrawText(gameover_message, 20, 80, 20, WHITE);
                     DrawTexture(oopsie_texture, screenWidth - 512, screenHeight - 256, DARKGRAY);
                     DrawText("press any key to continue", 20, screenHeight - 40, 20, WHITE);
