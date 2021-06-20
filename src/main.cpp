@@ -42,14 +42,7 @@ int screenHeight = 450;
 int screenWidthBeforeFullscreen;
 int screenHeightBeforeFullscreen;
 
-Dot dots[] = {{screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight},
-              {screenWidth, screenHeight}};  // Welcome to hell!
+Dot dots[8] = {};  // Welcome to hell!
 Potion potion;
 Potion dupepotion;
 Potion doompotion;

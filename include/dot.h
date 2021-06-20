@@ -7,11 +7,9 @@ class Dot
   double dot_y;
   int width;
   int height;
-  int screen_width;
-  int screen_height;
 	
   public:
-	Dot(const int screenWidth, const int screenHeight);
+	Dot();
 	double getX();
 	double getY();
   int    getWidth();

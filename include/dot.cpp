@@ -4,14 +4,12 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <stdio.h>
-Dot::Dot(const int screenWidth, const int screenHeight)
+Dot::Dot()
 {
     width = 64;
     height = 64;
     dot_x = rand()% 660 + 20;
     dot_y = 0 - height;
-    screen_width = screenWidth;
-    screen_height = screenHeight;
     
 }
 
