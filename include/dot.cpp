@@ -1,4 +1,3 @@
-#include "raylib.h"
 #include "dot.h"
 #include <math.h>
 #include <cstdio>

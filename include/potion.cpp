@@ -1,4 +1,3 @@
-#include "raylib.h"
 #include "potion.h"
 #include <math.h>
 #include <cstdio>
