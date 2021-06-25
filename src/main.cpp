@@ -377,6 +377,7 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Dotty");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
+    SetWindowMinSize(800, 450);  // Turns out, I'm a dense dumbass.
 
     int framesCounter = 0;  // used to show title screen after 2 seconds
 
@@ -446,10 +447,11 @@ int main(void)
         screenWidth = GetScreenWidth();
         screenHeight = GetScreenHeight();
 
-        if(IsWindowResized()){
-            if (screenWidth < 800)  SetWindowSize(800, GetScreenHeight());
-            if (screenHeight < 450) SetWindowSize(GetScreenWidth(), 450);
-        }
+        // if(IsWindowResized()){
+        //     if (screenWidth < 800)  SetWindowSize(800, GetScreenHeight());
+        //     if (screenHeight < 450) SetWindowSize(GetScreenWidth(), 450);
+        // }
+        // SetWindowMinSize() is a thing. I'm dumb.
 
         #if defined(PLATFORM_DESKTOP)
             if(IsKeyPressed(KEY_F9)){
