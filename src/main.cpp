@@ -521,6 +521,8 @@ int main(void)
             {
                 if (press_start()){
                     currentScreen = GAMEPLAY;
+                    if(do_pause()) pressed_pause_to_continue = true;
+                    // Whoops. Not only does it do it on the pause menu but also on the title screen.
                 }
             } break;
             case GAMEPLAY:
