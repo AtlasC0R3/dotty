@@ -484,10 +484,17 @@ int main(void)
                     // windowed to fullscreen
                     screenWidthBeforeFullscreen = screenWidth;
                     screenHeightBeforeFullscreen = screenHeight;
-                    SetWindowSize(GetMonitorWidth(0), GetMonitorHeight(0));
+                    #if defined(WINDOWS)
+                    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
+                    #endif
                     SetWindowState(FLAG_VSYNC_HINT);
 
                     ToggleFullscreen();
+                    #if not defined(WINDOWS)
+                    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
+                    // It just works. It just works. IT JUST WORKS. IT JUST WORKS!
+                    // im sane i swear
+                    #endif
                     // This applies fullscreen as we all know it.
 
                     // SetWindowState(FLAG_WINDOW_UNDECORATED); SetWindowPosition(0, 0);
