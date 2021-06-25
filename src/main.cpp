@@ -310,6 +310,7 @@ bool press_start(void){
     }
     if ((pressed_key != 0 &&                                                                                // check if there's actually a key pressed
        !(pressed_key >= 262 && pressed_key <= 265) &&                                                       // ignore arrow keys
+       !(pressed_key >= 290 && pressed_key <= 301) &&                                                       // ignore F* keys
        !(pressed_key == KEY_W || pressed_key == KEY_A || pressed_key == KEY_S || pressed_key == KEY_D)) ||  // ignore WASD keys
        IsGestureDetected(GESTURE_TAP)){                                                                     // check if the user tapped on the window or screen
         start = true;
