@@ -105,6 +105,19 @@ void reset_dotty(const int screenWidth, const int screenHeight){
     doompotion.remove();
 };
 
+void fix_stuff_outside_window(const int screenWidth, const int screenHeight, const int deadzone = 40){
+    for (int i = 0; i < dot_amount; i++) if(dots[i].getX() + deadzone > screenWidth or dots[i].getY() + deadzone > screenHeight) dots[i].updatePosition(screenWidth, screenHeight);
+    if((potion.getX() + deadzone > screenWidth) or
+       (potion.getY() + deadzone > screenHeight))
+        potion.randomize_position(screenWidth, screenHeight);
+    if((dupepotion.getX() + deadzone > screenWidth) or
+       (dupepotion.getY() + deadzone > screenHeight))
+        dupepotion.randomize_position(screenWidth, screenHeight);
+    if((doompotion.getX() + deadzone > screenWidth) or
+       (doompotion.getY() + deadzone > screenHeight))
+        doompotion.randomize_position(screenWidth, screenHeight);
+};
+
 bool check_collision_line(double point1, double point2){
     // point1 = point1.getX()
     // point2 = point2.getX()
@@ -463,22 +476,13 @@ int main(void)
                     SetWindowSize(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
                     // Window ready
 
+                    #if defined(WINDOWS)
                     screenWidth = GetScreenWidth();
                     screenHeight = GetScreenHeight();
+                    #endif
 
                     dotty = {50, 50, 96, 96};
-                    reset_dots(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
-                    {
-                        if((potion.getX() + 96 > screenWidthBeforeFullscreen) or
-                           (potion.getY() + 96 > screenHeightBeforeFullscreen))
-                            potion.randomize_position(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
-                        if((dupepotion.getX() + 96 > screenWidthBeforeFullscreen) or
-                           (dupepotion.getY() + 96 > screenHeightBeforeFullscreen))
-                            dupepotion.randomize_position(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
-                        if((doompotion.getX() + 96 > screenWidthBeforeFullscreen) or
-                            doompotion.getY() + 96 > screenHeightBeforeFullscreen)
-                            doompotion.randomize_position(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
-                    }
+                    fix_stuff_outside_window(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen, 96);
                     // otherwise stuff will still be outside of the window and cause a game over.
                 } else{
                     // windowed to fullscreen
@@ -492,6 +496,7 @@ int main(void)
                     ToggleFullscreen();
                     #if not defined(WINDOWS)
                     SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
+                    currentScreen = PAUSE;
                     // It just works. It just works. IT JUST WORKS. IT JUST WORKS!
                     // im sane i swear
                     #endif
@@ -537,6 +542,8 @@ int main(void)
                 right = check_right();
                 up    = check_up();
                 down  = check_down();
+
+                fix_stuff_outside_window(screenWidth, screenHeight);
 
                 lastGesture = currentGesture;
                 currentGesture = GetGestureDetected();
