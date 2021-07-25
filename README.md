@@ -14,7 +14,7 @@ This game uses [raylib](https://www.raylib.com/) as a graphics/sound/input libra
 ([Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows), [macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS), [Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux), [etc.](https://github.com/raysan5/raylib/wiki))
 then use make (or mingw32-make, or tcc, asjhfggjzad) to compile.
 
-*Tested on Windows 10 and Debian using KDE.*
+*Tested on Windows 10 and Debian and Arch Linux on KDE.*
 
 ## F.A.Q.
 well should i explain what a faq is
