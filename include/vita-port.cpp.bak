@@ -1,0 +1,272 @@
+#include "graphics-logic.h"
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <fstream>
+
+#include <psp2/ctrl.h>
+#include <psp2/kernel/processmgr.h>
+#include <vita2d.h>
+
+#include "soloud.h"
+#include "soloud_wav.h"
+
+// int currentGesture = GESTURE_NONE;
+// int lastGesture = GESTURE_NONE;
+// bool gesture_movement = false;
+
+int platformScreenWidth = 960;
+int platformScreenHeight = 544;
+
+bool continuedUsingPause;
+bool alreadyPressedPause;
+
+const char* bottom_text;
+
+// texture variables
+SoLoud::Soloud gSoloud;
+SoLoud::Wav ouchie;
+SoLoud::Wav obtained;
+SoLoud::Wav potion_sound;
+SoLoud::Wav clone_ouchie;
+vita2d_texture *splash_logo = vita2d_load_PNG_file("app0:/resources/vita/images/splash.png");
+vita2d_texture *dotty_base  = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/base.png");
+vita2d_texture *dotty_front = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/front.png");
+vita2d_texture *dotty_clone = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/clone.png");
+vita2d_texture *dotty_sleep = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/sleep.png");
+vita2d_texture *dotty_down  = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/down.png");
+vita2d_texture *dotty_up    = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/up.png");
+vita2d_texture *dotty_right = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/side.png");
+vita2d_texture *dotty_left  = vita2d_load_PNG_file("app0:/resources/vita/images/dotty/left.png");
+vita2d_texture *dot         = vita2d_load_PNG_file("app0:/resources/vita/images/items/dot.png");
+vita2d_texture *potion_dot  = vita2d_load_PNG_file("app0:/resources/vita/images/items/potion-dots.png");
+vita2d_texture *potion_dupe = vita2d_load_PNG_file("app0:/resources/vita/images/items/potion-dupe.png");
+vita2d_texture *potion_doom = vita2d_load_PNG_file("app0:/resources/vita/images/items/smallpotion-doom.png");
+vita2d_texture *oopsies_screenedge     = vita2d_load_PNG_file("app0:/resources/vita/images/oopsies/screen-edge.png");
+vita2d_texture *oopsies_clonecollision = vita2d_load_PNG_file("app0:/resources/vita/images/oopsies/clone-collision.png");
+vita2d_texture *oopsies_what           = vita2d_load_PNG_file("app0:/resources/vita/images/oopsies/what-just-happened.png");
+vita2d_texture *oopsies_doom           = vita2d_load_PNG_file("app0:/resources/vita/images/oopsies/doom-drank.png");
+vita2d_font *font = vita2d_load_font_file("app0:resources/vita/fonts/font.ttf");
+
+SceCtrlData ctrl;
+// -------------------------------
+
+int get_highscore(){
+    int tempScore = 0;
+    std::ifstream save;
+    save.open("ux0:data/highscore.save", std::ifstream::in );
+
+    if( !save.fail() ){
+        save >> tempScore;
+    }
+    save.close();
+    return tempScore;
+    // https://github.com/PolyMarsDev/Terri-Fried/blob/master/psvita/src/main.cpp#L49-L60
+};
+void set_highscore(int highscore){
+    std::ofstream save;
+    save.open("ux0:data/highscore.save");
+
+    save <<  highscore;
+
+    save.close();
+    // https://github.com/PolyMarsDev/Terri-Fried/blob/master/psvita/src/main.cpp#L62-L69
+}
+
+void initialize_game(){
+    vita2d_init();
+    vita2d_set_clear_color(RGBA8(238, 228, 225, 255));
+
+    ouchie.load("app0:/resources/vita/sounds/ouchie.wav");
+    obtained.load("app0:/resources/vita/sounds/obtained.wav");
+    potion_sound.load("app0:/resources/vita/sounds/potion.wav");
+    clone_ouchie.load("app0:/resources/vita/sounds/clone-ouchie.wav");
+}
+
+void close_game(){
+    vita2d_fini();
+    vita2d_free_texture(splash_logo);
+    vita2d_free_texture(dotty_base);
+    vita2d_free_texture(dotty_front);
+    vita2d_free_texture(dotty_clone);
+    vita2d_free_texture(dotty_down);
+    vita2d_free_texture(dotty_up);
+    vita2d_free_texture(dotty_right);
+    vita2d_free_texture(dotty_left);
+    vita2d_free_texture(dot);
+    vita2d_free_texture(potion_dot);
+    vita2d_free_texture(potion_dupe);
+    vita2d_free_texture(potion_doom);
+    vita2d_free_texture(oopsies_screenedge);
+    vita2d_free_texture(oopsies_clonecollision);
+    vita2d_free_texture(oopsies_what);
+    vita2d_free_texture(oopsies_doom);
+    vita2d_free_font(font);
+    // heck
+    
+    sceKernelExitProcess(0);
+}
+
+// Controller/keyboard input mechanisms
+bool check_left(void){
+    sceCtrlPeekBufferPositive(0, &ctrl, 1);
+    bool go_left = false;
+    if((ctrl.buttons & SCE_CTRL_LEFT) == SCE_CTRL_LEFT) go_left = true;
+    return (go_left);
+}
+
+bool check_right(void){
+    sceCtrlPeekBufferPositive(0, &ctrl, 1);
+    bool go_right = false;
+    if((ctrl.buttons & SCE_CTRL_RIGHT) == SCE_CTRL_RIGHT) go_right = true;
+    return (go_right);
+}
+
+bool check_up(void){
+    sceCtrlPeekBufferPositive(0, &ctrl, 1);
+    bool go_up = false;
+    if((ctrl.buttons & SCE_CTRL_UP) == SCE_CTRL_UP) go_up = true;
+    return (go_up);
+}
+
+bool check_down(void){
+    sceCtrlPeekBufferPositive(0, &ctrl, 1);
+    bool go_down = false;
+    if((ctrl.buttons & SCE_CTRL_DOWN) == SCE_CTRL_LEFT) go_down = true;
+    return (go_down);
+}
+
+Directions get_movement(void){
+    if(check_left())  return LEFT;
+    if(check_right()) return RIGHT;
+    if(check_up())    return UP;
+    if(check_down())  return DOWN;
+    return NONE;
+}
+
+bool exit_game(void){
+    // The PlayStation Vita OS should handle it by itself.
+    return (false);
+}
+
+bool press_start(void){
+    bool start = false;
+    // if(ctrl.buttons != ()) start = true;
+    // TODO: make this actually work
+    start = true;
+    return (start);
+}
+
+bool do_pause(void){
+    bool pause = false;
+    if(((ctrl.buttons & SCE_CTRL_START) == SCE_CTRL_START) ||
+	  (((ctrl.buttons & SCE_CTRL_LTRIGGER) == SCE_CTRL_LTRIGGER) && ((ctrl.buttons & SCE_CTRL_RTRIGGER) == SCE_CTRL_RTRIGGER))){
+        // The way the user will pause the game borrows the same principles as how the user would pause the game using a controller in Raylib.
+        // What I just said makes sense, right?
+        pause = true;
+    }
+    return (pause);
+}
+bool start_pause_menu(){
+    return(do_pause());
+}
+bool is_window_resized(){
+    return(false);  // For fuck's sake, it's a Vita.
+}
+
+const int get_screen_width(){
+    return platformScreenWidth;
+}
+const int get_screen_height(){
+    return platformScreenHeight;
+}
+
+void frame_start(){
+    // I don't *think* I'll need to put anything here for the Vita. Win.
+}
+
+void draw_sprite(Sprite sprite, const int x, const int y){
+    switch(sprite){
+        case DOTTY_BASE:  vita2d_draw_texture(dotty_base,   x, y); printf("hey im drawing dotty rn at %d %d\n", x, y); break;
+        case DOT:         vita2d_draw_texture(dot,          x, y); break;
+        case POTION_DOT:  vita2d_draw_texture(potion_dot,   x, y); break;
+        case POTION_DUPE: vita2d_draw_texture(potion_dupe,  x, y); break;
+        case POTION_DOOM: vita2d_draw_texture(potion_doom,  x, y); break;
+        case DOTTY_RIGHT: vita2d_draw_texture(dotty_right,  x, y); break;
+        case DOTTY_LEFT:  vita2d_draw_texture(dotty_left,   x, y); break;
+        case DOTTY_UP:    vita2d_draw_texture(dotty_up,     x, y); break;
+        case DOTTY_DOWN:  vita2d_draw_texture(dotty_down,   x, y); break;
+        case DOTTY_FRONT: vita2d_draw_texture(dotty_front,  x, y); break;  // hi :)
+        case DOTTY_CLONE: vita2d_draw_texture(dotty_clone,  x, y); break;
+        default: break;
+    }
+}
+
+void play_sound(Sounds sound){
+    switch(sound){
+        case OBTAINED:        gSoloud.play(obtained); break;
+        case CLONE_OUCHIE:    gSoloud.play(clone_ouchie); break;
+        case POTION_OBTAINED: gSoloud.play(potion_sound); break;
+        case OWIE:            gSoloud.play(ouchie); break;
+        default: break;
+    }
+}
+
+void draw_scene(GameScreen scene, const int screenWidth, const int screenHeight){
+    switch(scene){
+        case SPLASH: {
+            vita2d_clear_screen();
+            vita2d_draw_texture(dotty_sleep, (screenWidth - 64) / 2, (screenHeight  - 64) / 2.25);
+            // DrawText("made with raylib", 20, screenHeight - 40, 20, WHITE);
+        }; break;
+        case TITLE: {
+            vita2d_clear_screen();
+            vita2d_draw_texture(splash_logo, (screenWidth / 2) - 64 / 2, (screenHeight / 2) - 64 * 0.75);
+            // DrawText("press any key", (screenWidth / 2) - (219 / 2), screenHeight * 0.75, 30, BLACK);
+        }; break;
+        case GAMEOVER: {
+            vita2d_clear_screen();
+            // DrawText("GAME OVER", 20, 20, 40, WHITE);
+        }; break;
+        case PAUSE: {
+            // DrawRectangle(0, 0, screenWidth, screenHeight, GRAY);
+            vita2d_clear_screen();
+            int displayHeight = screenHeight / 2;
+            // DrawText("PAUSED", (screenWidth / 2) - (164 / 2), displayHeight - 36, 40, BLACK);                   // PAUSED's height is 28
+            // DrawText("pause again to continue", (screenWidth / 2) - (242 / 2), displayHeight + 26, 20, BLACK);  // this text's height is 18
+            // it's 36 and 34 here to add 36 pixels of spacing between the two texts.. does this make sense? please tell me it does.
+        }; break;
+        default: break;
+    }
+}
+
+void draw_gameover(Failures failure, const char* gameover_message, const int screenWidth, const int screenHeight){
+    vita2d_texture *oopsie_texture;
+    switch (failure){
+        case SCREEN_EDGE:     oopsie_texture = oopsies_screenedge;     break;
+        case CLONE_COLLISION: oopsie_texture = oopsies_clonecollision; break;
+        case DOOM_POTION:     oopsie_texture = oopsies_doom;           break;
+        default: break;
+    }
+    // DrawText(gameover_message, 20, 80, 20, WHITE);
+    vita2d_draw_texture(oopsie_texture, screenWidth - 512, screenHeight - 256);
+    // DrawText("press any key to continue", 20, screenHeight - 40, 20, WHITE);
+}
+
+void draw_score(int score, int highscore){
+    char eaten_cchar[32];
+    char bottom_text[32];
+    sprintf(eaten_cchar, "%d", score);
+    sprintf(bottom_text, "BEST: %d", highscore);
+    // DrawText(eaten_cchar, 20, get_screen_height() - 80, 20, DARKGRAY);
+    // DrawText(bottom_text, 20, get_screen_height() - 40, 20, DARKGRAY);
+}
+
+void frame_end(){
+    vita2d_end_drawing();
+    vita2d_swap_buffers();
+}
+
+void crash_game(){
+    sceKernelExitProcess(0);
+}

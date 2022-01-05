@@ -1,17 +1,12 @@
 // C includes
-#include "raylib.h"
-
-#ifdef PLATFORM_DESKTOP
-#include <dirent.h>
-#endif
-#include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Game-specific includes and stuff
 #include "../include/player.h"  // That works.
 #include "../include/dot.h"
 #include "../include/potion.h"
+#include "../include/graphics-logic.h"
 
 #include <unistd.h>
 
@@ -41,8 +36,8 @@ int random_counter;
 
 bool has_saved = false;
 
-int screenWidth = 800;
-int screenHeight = 450;
+int screenWidth  = platformScreenWidth;
+int screenHeight = platformScreenHeight;
 int screenWidthBeforeFullscreen;
 int screenHeightBeforeFullscreen;
 
@@ -58,20 +53,15 @@ char highscore[32];
 int dot_amount = 1;
 int eaten = 0;
 typedef enum Actions { NOTHING, DOT_OBTAINED, DUPE_DOTS, DUPE_DOTTY, DUPE_LOST, OUCHIE } Actions;
-typedef enum Failures { ALIVE, SCREEN_EDGE, CLONE_COLLISION, DOOM_POTION } Failures;  // no, being alive is not a failure. you're amazing alive. keep being you.
 Actions collision_type = NOTHING;
 Actions old_collision_type;
 Failures failure;
 double multiplier;
 
-int currentGesture = GESTURE_NONE;
-int lastGesture = GESTURE_NONE;
-bool gesture_movement = false;
-typedef enum GameScreen { SPLASH, TITLE, GAMEPLAY, PAUSE, GAMEOVER } GameScreen;
 bool pauseButtonAlreadyPressed;
-bool disableEscapeQuit = false;  // set it to "true" and it'll pause the game when the user presses "escape"
 
 bool pressed_pause_to_continue = false;  // often times, people would press the Space key to play again, after a "game over" screen
+                                         // activating the pause menu from within the game
 //--------------------------------------------------------------------------------------
 
 double get_velocity() {return ((((screenWidth / 265) + (screenHeight / 150)) / 2) + ((eaten * 2) * multiplier));};
@@ -93,9 +83,7 @@ void reset_dotty(const int screenWidth, const int screenHeight){
     dupe = false;
     has_moved = false;
     vertically_collided = false;
-    #if defined(PLATFORM_DESKTOP)
-        highscoreInt = LoadStorageValue(0);
-    #endif
+    highscoreInt = get_highscore();
 
     reset_dots(screenWidth, screenHeight);
     potion.remove();
@@ -201,313 +189,24 @@ void checkPlayerCollision(const int screenWidth, const int screenHeight)
         }
     }
 }
-// Controller/keyboard input mechanisms
-bool check_left(void){
-    bool go_left = false;
-    int a;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if (extreme_debug_prints) printf("Controller %s detected\n", GetGamepadName(a));  // debugging controllers.
-            if (IsGamepadButtonPressed(a, 4)){
-                go_left = true;
-                if (debug_prints) printf("Left D-pad on controller name %s\n", GetGamepadName(a));
-            }
-            else if (GetGamepadAxisMovement(a, 0) < -0.50){
-                go_left = true;
-                if (debug_prints) printf("Left joystick on controller name %s\n", GetGamepadName(a));
-            }
-            
-        }
-    }
-    if (IsKeyPressed(KEY_LEFT) or IsKeyPressed(KEY_A)){
-        go_left = true;
-        if (debug_prints) printf("Left key pressed on keyboard\n");
-    }
-    return (go_left);
-}
-
-bool check_right(void){
-    bool go_right = false;
-    int a;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if (extreme_debug_prints) printf("Controller %s detected\n", GetGamepadName(a));  // debugging controllers.
-            if (IsGamepadButtonPressed(a, 2)){
-                go_right = true;
-                if (debug_prints) printf("Right D-pad on controller name %s\n", GetGamepadName(a));
-            }
-            else if (GetGamepadAxisMovement(a, 0) > 0.50){
-                go_right = true;
-                if (debug_prints) printf("Right joystick on controller name %s\n", GetGamepadName(a));
-            }
-        }
-    }
-    if (IsKeyPressed(KEY_RIGHT) or IsKeyPressed(KEY_D)){
-        go_right = true;
-        if (debug_prints) printf("Right key pressed on keyboard\n");
-    }
-    return (go_right);
-}
-
-bool check_up(void){
-    bool go_up = false;
-    int a;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if (extreme_debug_prints) printf("Controller %s detected\n", GetGamepadName(a));  // debugging controllers.
-            if (IsGamepadButtonPressed(a, 1)){
-                go_up = true;
-                if (debug_prints) printf("Up D-pad on controller name %s\n", GetGamepadName(a));
-            }
-            else if (GetGamepadAxisMovement(a, 1) < -0.50){
-                go_up = true;
-                if (debug_prints) printf("Up joystick on controller name %s\n", GetGamepadName(a));
-            }
-        }
-    }
-    if (IsKeyPressed(KEY_UP) or IsKeyPressed(KEY_W)){
-        go_up = true;
-        if (debug_prints) printf("Up key pressed on keyboard\n");
-    }
-    return (go_up);
-}
-
-bool check_down(void){
-    bool go_down = false;
-    int a;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if (extreme_debug_prints) printf("Controller %s detected\n", GetGamepadName(a));  // debugging controllers.
-            if (IsGamepadButtonPressed(a, 3)){
-                go_down = true;
-                if (debug_prints) printf("Down D-pad on controller name %s\n", GetGamepadName(a));
-            }
-            else if (GetGamepadAxisMovement(a, 1) > 0.50){
-                go_down = true;
-                if (debug_prints) printf("Down joystick on controller name %s\n", GetGamepadName(a));
-            }
-        }
-    }
-    if (IsKeyPressed(KEY_DOWN) or IsKeyPressed(KEY_S)){
-        go_down = true;
-        if (debug_prints) printf("Down key pressed on keyboard\n");
-    }
-    return (go_down);
-}
-
-bool cont_exit(void){
-    bool exit = false;
-    int a;
-    if(WindowShouldClose()) return true;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if ((IsGamepadButtonPressed(a, 14) or (IsGamepadButtonDown(a, 13) and IsGamepadButtonDown(a, 15))) and IsWindowFocused()){
-                exit = true;
-                if (debug_prints) printf("Home button pressed on controller name %s: exiting...\n", GetGamepadName(a));
-            }
-        }
-    }
-    return exit;
-}
-
-bool press_start(void){
-    bool start = false;
-    int pressed_key = GetKeyPressed();
-    if (GetGamepadButtonPressed() > 0){
-        start = true;
-    }
-    if ((pressed_key != 0 &&                                                                                // check if there's actually a key pressed
-       !(pressed_key >= 262 && pressed_key <= 265) &&                                                       // ignore arrow keys
-       !(pressed_key >= 290 && pressed_key <= 301) &&                                                       // ignore F* keys
-       !(pressed_key == KEY_W || pressed_key == KEY_A || pressed_key == KEY_S || pressed_key == KEY_D)) ||  // ignore WASD keys
-       IsGestureDetected(GESTURE_TAP)){                                                                     // check if the user tapped on the window or screen
-        start = true;
-    }
-    int a;
-    for( a = 0; a <= 8; a+=1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            int b;
-            for (b=0;b <= GetGamepadAxisCount(a);b+=1){
-                if (GetGamepadAxisMovement(a, b) == 1){
-                    start = true;
-                }
-            }
-        }
-    }
-    return (start);
-}
-
-bool do_pause(void){
-    bool pause = false;
-    int a;
-    for( a = -1; a < 9; a = a + 1 ){
-        if (IsGamepadAvailable(a)){
-            // there's a gamepad!
-            if (IsGamepadButtonPressed(a, 15)){
-                pause = true;
-                if (debug_prints) printf("Pause button pressed on controller name %s\n", GetGamepadName(a));
-            }
-            if ((GetGamepadAxisMovement(a, 4) >= 0.5) && (GetGamepadAxisMovement(a, 5) >= 0.5)){
-                pause = true;
-                if (debug_prints) printf("Both triggers pressed on controller name %s\n", GetGamepadName(a));
-            }
-        }
-    }
-    if (GetGamepadButtonPressed() == 5 || GetGamepadButtonPressed() == 8){
-        pause = true;
-    }
-    if (IsKeyDown(KEY_ESCAPE) || IsKeyDown(KEY_SPACE) || IsGestureDetected(GESTURE_DOUBLETAP)){
-        pause = true;
-    }
-    pressed_pause_to_continue = false;
-    if ((pauseButtonAlreadyPressed and pause) or pressed_pause_to_continue){
-        pause = false;
-    }else{
-        pauseButtonAlreadyPressed = pause;
-    }
-    return (pause);
-}
 //--------------------------------------------------------------------------------------
 
 
 int main(void)
 {
-    #if defined(PLATFORM_DESKTOP)
-        if (!opendir("resources")) {
-            printf("Could not find the resources/ folder. This will render the game unplayable.\n");
-            exit(1);
-        }
-        SetWindowIcon(LoadImage("resources/images/logo/icon.ico"));
-    #endif
-    
-    if (extreme_debug_prints) debug_prints = true;
-
-    InitWindow(screenWidth, screenHeight, "Dotty");
-    SetWindowState(FLAG_WINDOW_RESIZABLE);
-    SetWindowMinSize(800, 450);  // Turns out, I'm a dense dumbass.
+    initialize_game();
 
     int framesCounter = 0;  // used to show title screen after 2 seconds
-
-    // Initialize audio
-      InitAudioDevice();
-      Sound ouchie       = LoadSound("resources/sounds/ouchie.wav");
-      Sound obtained     = LoadSound("resources/sounds/obtained.wav");
-      Sound potion_sound = LoadSound("resources/sounds/potion.wav");
-      Sound clone_ouchie = LoadSound("resources/sounds/clone-ouchie.wav");
-
-    // Initialize textures.
-    // NOTE: Textures MUST be loaded after Window initialization (OpenGL context is required)
-    // NOTE: Otherwise you'll get a "Segmentation fault" error.
-
-    // Splash logo
-      Texture2D splash_logo = LoadTexture("resources/images/splash.png");
-    // Basic textures
-      Texture2D dotty_base = LoadTexture("resources/images/dotty/base.png");
-      Texture2D dotty_front = LoadTexture("resources/images/dotty/front.png");
-      Texture2D dotty_clone = LoadTexture("resources/images/dotty/clone.png");
-      Texture2D dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
-    // Up-down textures
-      Image dotty_down_image = LoadImage("resources/images/dotty/down.png");
-      Image *dotty_up_image = &dotty_down_image;
-      Texture2D dotty_down = LoadTextureFromImage(dotty_down_image);
-      ImageFlipVertical(dotty_up_image);
-      Texture2D dotty_up = LoadTextureFromImage(dotty_down_image);
-      UnloadImage(dotty_down_image);
-    // Side textures
-      Image dotty_side = LoadImage("resources/images/dotty/side.png");
-      Image *dotty_side_flipped = &dotty_side;
-      Texture2D dotty_right = LoadTextureFromImage(dotty_side);
-      ImageFlipHorizontal(dotty_side_flipped);
-      Texture2D dotty_left = LoadTextureFromImage(dotty_side);
-      UnloadImage(dotty_side);
-    // Power-up textures
-      Texture2D dot = LoadTexture("resources/images/items/dot.png");
-    // Potion textures
-      Texture2D potion_dot = LoadTexture("resources/images/items/potion-dots.png");
-      Texture2D potion_dupe = LoadTexture("resources/images/items/potion-dupe.png");
-      Texture2D potion_doom = LoadTexture("resources/images/items/smallpotion-doom.png");
-    // Power-up textures
-      Texture2D oopsies_screenedge = LoadTexture("resources/images/oopsies/screen-edge.png");
-      Texture2D oopsies_clonecollision = LoadTexture("resources/images/oopsies/clone-collision.png");
-      Texture2D oopsies_what = LoadTexture("resources/images/oopsies/what-just-happened.png");
-      Texture2D oopsies_doom = LoadTexture("resources/images/oopsies/doom-drank.png");
-    // Likely unused textures
-    //   Texture2D dotty_blink = LoadTexture("resources/images/dotty/blink.png");
-    //   Texture2D dotty_half = LoadTexture("resources/images/dotty/half-blink.png");
-    //--------------------------------------------------------------------------------------
-
-
-
 
     GameScreen currentScreen = SPLASH;
 
     reset_dotty(screenWidth, screenHeight);
 
-    SetTargetFPS(60);
-
-    while (!cont_exit())  // run until user presses either Xbox/PS/Home/Steam button on controller or closes window
+    while (!exit_game())  // run until user presses either Xbox/PS/Home/Steam button on controller or closes window
                           // check the actual function for more info on "what does it do and how does it do"
     {
-        if (disableEscapeQuit){
-            SetExitKey(-420); // i could've just put 0 but, no.
-        }
-        screenWidth = GetScreenWidth();
-        screenHeight = GetScreenHeight();
-
-        // if(IsWindowResized()){
-        //     if (screenWidth < 800)  SetWindowSize(800, GetScreenHeight());
-        //     if (screenHeight < 450) SetWindowSize(GetScreenWidth(), 450);
-        // }
-        // SetWindowMinSize() is a thing. I'm dumb.
-
-        #if defined(PLATFORM_DESKTOP)
-            if(IsKeyPressed(KEY_F9)){
-                if(IsWindowFullscreen()){
-                    // fullscreen to windowed
-
-                    ToggleFullscreen();
-                    ClearWindowState(FLAG_VSYNC_HINT);
-                    SetWindowSize(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen);
-                    // Window ready
-
-                    #if defined(WINDOWS)
-                    screenWidth = GetScreenWidth();
-                    screenHeight = GetScreenHeight();
-                    #endif
-
-                    dotty = {50, 50, 96, 96};
-                    fix_stuff_outside_window(screenWidthBeforeFullscreen, screenHeightBeforeFullscreen, 96);
-                    // otherwise stuff will still be outside of the window and cause a game over.
-                } else{
-                    // windowed to fullscreen
-                    screenWidthBeforeFullscreen = screenWidth;
-                    screenHeightBeforeFullscreen = screenHeight;
-                    #if defined(WINDOWS)
-                    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
-                    #endif
-                    SetWindowState(FLAG_VSYNC_HINT);
-
-                    ToggleFullscreen();
-                    #if not defined(WINDOWS)
-                    SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
-                    currentScreen = PAUSE;
-                    // It just works. It just works. IT JUST WORKS. IT JUST WORKS!
-                    // im sane i swear
-                    #endif
-                    // This applies fullscreen as we all know it.
-
-                    // SetWindowState(FLAG_WINDOW_UNDECORATED); SetWindowPosition(0, 0);
-                    // This does borderless windowed. This has been disabled since I can't find a way to re-enable the window decorations.
-                    // It also tends to bend window reality.
-                }
-            }
-        #endif
+        screenWidth =  get_screen_width();
+        screenHeight = get_screen_height();
 
         vel = get_velocity();
         if(nightmare) vel *= 10;
@@ -535,27 +234,28 @@ int main(void)
                 sprintf(highscore, "BEST: %d", highscoreInt);
 
                 failure = ALIVE;
-                gesture_movement = false;
+
+                left = false; right = false; up = false; down = false;
+                // yes this part is necessary otherwise movement will be janky and unresponsive.
 
                 // add control stuff
-                left  = check_left();
-                right = check_right();
-                up    = check_up();
-                down  = check_down();
+                Directions movement = get_movement();
+                switch (movement){
+                    case LEFT:  left = true;
+                    case RIGHT: right = true;
+                    case UP:    up = true;
+                    case DOWN:  down = true;
+                    default: break;
+                }
 
-                fix_stuff_outside_window(screenWidth, screenHeight);
+                fix_stuff_outside_window(get_screen_width(), get_screen_height());
 
-                lastGesture = currentGesture;
-                currentGesture = GetGestureDetected();
-
-                if (do_pause() or !IsWindowFocused()){
+                if (start_pause_menu()){
                     currentScreen = PAUSE;
                     break;
                 }
 
-                if (currentGesture >= 16 and currentGesture <= 128) gesture_movement = true;
-
-                if(IsWindowResized()){
+                if(is_window_resized()){
                     if(check_player_window_collision()){
                         dotty.setX(50);
                         dotty.setY(50);
@@ -564,21 +264,10 @@ int main(void)
                     }
                 }
 
-                if (left or right or up or down or gesture_movement){
+                if (movement != NONE){
                     velX = 0;
                     velY = 0;
                     has_moved = true;
-                }
-
-                // gesture movements
-                if (gesture_movement){
-                    switch (currentGesture){
-                        case GESTURE_SWIPE_RIGHT: right = true; break;
-                        case GESTURE_SWIPE_LEFT: left = true; break;
-                        case GESTURE_SWIPE_UP: up = true; break;
-                        case GESTURE_SWIPE_DOWN: down = true; break;
-                        default: break;
-                    }
                 }
 
                 // applying velocity integers
@@ -607,13 +296,13 @@ int main(void)
                 collision_type = NOTHING;
                 if (old_collision_type != NOTHING){
                     switch (old_collision_type){
-                        case DOT_OBTAINED: PlaySound(obtained); break;
-                        case DUPE_LOST:    PlaySound(clone_ouchie); break;
-                        case DUPE_DOTS:    PlaySound(potion_sound); break;
-                        case DUPE_DOTTY:   PlaySound(potion_sound); break;
+                        case DOT_OBTAINED: play_sound(OBTAINED); break;
+                        case DUPE_LOST:    play_sound(CLONE_OUCHIE); break;
+                        case DUPE_DOTS:    play_sound(POTION_OBTAINED); break;
+                        case DUPE_DOTTY:   play_sound(POTION_OBTAINED); break;
                         case OUCHIE: {
                             // game over
-                            PlaySound(ouchie);
+                            play_sound(OWIE);
                             currentScreen = GAMEOVER;
                             has_saved = false;
                             break;
@@ -625,14 +314,14 @@ int main(void)
                 // potion randomizer stuff
                 if (rand() % 2000 == 1){
                     potion.update(screenWidth, screenHeight);
-                    if(debug_prints) PlaySound(clone_ouchie);
+                    if(debug_prints) play_sound(CLONE_OUCHIE);
                 }
                 if (rand() % 2500 == 1){
                     dupepotion.update(screenWidth, screenHeight);
-                    if(debug_prints) PlaySound(clone_ouchie);
+                    if(debug_prints) play_sound(CLONE_OUCHIE);
                 }
                 if (rand() % 500 == 1){
-                    if(debug_prints) PlaySound(clone_ouchie);
+                    if(debug_prints) play_sound(CLONE_OUCHIE);
                     while(true){
                         doompotion.update(screenWidth, screenHeight);
                         if(!((dotty.getX() + 96 > doompotion.getX() && dotty.getX() < doompotion.getX() + 96) && (dotty.getY() + 96 > doompotion.getY() && dotty.getY() < doompotion.getY() + 96)) or
@@ -653,7 +342,7 @@ int main(void)
                     highscoreInt = eaten;
                     #if defined(PLATFORM_DESKTOP)
                         if(not has_saved){
-                            SaveStorageValue(0, highscoreInt);  // stores highscore integer in storage.data in an Int32 format
+                            set_highscore(highscoreInt);
                             has_saved = true;
                         };
                     #endif
@@ -677,90 +366,67 @@ int main(void)
             default: break;
         }
 
-        BeginDrawing();
+        frame_start();
 
         switch(currentScreen) 
             {
-                case SPLASH: 
-                {
-                    ClearBackground(DARKGRAY);
-                    DrawTexture(dotty_sleep, (screenWidth - dotty_sleep.width) / 2, (screenHeight  - dotty_sleep.height) / 2.25, WHITE);
-                    DrawText("made with raylib", 20, screenHeight - 40, 20, WHITE);
-                    
-                } break;
-                case TITLE: 
-                {
-                    ClearBackground(GRAY);
-                    DrawTexture(splash_logo, (screenWidth / 2) - splash_logo.width / 2, (screenHeight / 2) - splash_logo.height * 0.75, GRAY);
-                    DrawText("press any key", (screenWidth / 2) - (219 / 2), screenHeight * 0.75, 30, BLACK);
-                    
-                } break;
+                case SPLASH: draw_scene(SPLASH, screenWidth, screenHeight); break;
+                case TITLE: draw_scene(TITLE, screenWidth, screenHeight); break;
                 case GAMEPLAY:
                 {
-                    ClearBackground(RAYWHITE);
+                    draw_scene(GAMEPLAY);
 
-                    for (int i = 0; i < 8; i++){
-                        DrawTexture(dot, dots[i].getX(), dots[i].getY(), WHITE);
-                    }
+                    for (int i = 0; i < 8; i++) draw_sprite(DOT, dots[i].getX(), dots[i].getY());
         
-                    DrawTexture(potion_dot,  potion.getX(),     potion.getY(),     WHITE);
-                    DrawTexture(potion_dupe, dupepotion.getX(), dupepotion.getY(), WHITE);
-                    DrawTexture(potion_doom, doompotion.getX(), doompotion.getY(), WHITE);
+                    draw_sprite(POTION_DOT,  potion.getX(),     potion.getY());
+                    draw_sprite(POTION_DUPE, dupepotion.getX(), dupepotion.getY());
+                    draw_sprite(POTION_DOOM, doompotion.getX(), doompotion.getY());
 
-                    DrawTexture(dotty_base, dotty.getX(), dotty.getY(), WHITE);
+                    draw_sprite(DOTTY_BASE, dotty.getX(), dotty.getY());
                     if (velX > 0){
-                        DrawTexture(dotty_right, dotty.getX(), dotty.getY(), WHITE);
+                        draw_sprite(DOTTY_RIGHT, dotty.getX(), dotty.getY());
                     }else if (velX < 0){
-                        DrawTexture(dotty_left, dotty.getX(), dotty.getY(), WHITE);
+                        draw_sprite(DOTTY_LEFT, dotty.getX(), dotty.getY());
                     }else if (velY > 0){
-                        DrawTexture(dotty_down, dotty.getX(), dotty.getY(), WHITE);
+                        draw_sprite(DOTTY_DOWN, dotty.getX(), dotty.getY());
                     }else if (velY < 0){
-                        DrawTexture(dotty_up, dotty.getX(), dotty.getY(), WHITE);
+                        draw_sprite(DOTTY_UP, dotty.getX(), dotty.getY());
                     }else{
                         // couldn't determine in which position they were going
-                        DrawTexture(dotty_front, dotty.getX(), dotty.getY(), WHITE);
+                        draw_sprite(DOTTY_FRONT, dotty.getX(), dotty.getY());
                     }
         
                     if(dupe){
-                        DrawTexture(dotty_base, dupedotty.getX(), dupedotty.getY(), WHITE);
-                        DrawTexture(dotty_clone, dupedotty.getX(), dupedotty.getY(), WHITE);
+                        draw_sprite(DOTTY_BASE, dupedotty.getX(), dupedotty.getY());
+                        draw_sprite(DOTTY_CLONE, dupedotty.getX(), dupedotty.getY());
                         if (velX > 0){
-                            DrawTexture(dotty_left, dupedotty.getX(), dupedotty.getY(), WHITE);
+                            draw_sprite(DOTTY_LEFT, dupedotty.getX(), dupedotty.getY());
                         }else if (velX < 0){
-                            DrawTexture(dotty_right, dupedotty.getX(), dupedotty.getY(), WHITE);
+                            draw_sprite(DOTTY_RIGHT, dupedotty.getX(), dupedotty.getY());
                         }else if (velY > 0){
-                            DrawTexture(dotty_up, dupedotty.getX(), dupedotty.getY(), WHITE);
+                            draw_sprite(DOTTY_UP, dupedotty.getX(), dupedotty.getY());
                         }else if (velY < 0){
-                            DrawTexture(dotty_down, dupedotty.getX(), dupedotty.getY(), WHITE);
+                            draw_sprite(DOTTY_DOWN, dupedotty.getX(), dupedotty.getY());
                         }else{
                             // couldn't determine in which position they were going
-                            DrawTexture(dotty_front, dupedotty.getX(), dupedotty.getY(), WHITE);
+                            draw_sprite(DOTTY_FRONT, dupedotty.getX(), dupedotty.getY());
                         }
                     }
                     
-                    char eaten_cchar[512];
-                    sprintf(eaten_cchar, "%d", eaten);
-                    const char* bottom_text;
-                    #if defined(PLATFORM_DESKTOP)
-                        bottom_text = highscore;
-                        DrawText(eaten_cchar, 20, screenHeight - 80, 20, DARKGRAY);
-                    #else
-                        bottom_text = eaten_cchar;
-                    #endif
-                    DrawText(bottom_text, 20, screenHeight - 40, 20, DARKGRAY);
+                    draw_score(eaten, highscoreInt);
                 } break;
                 case GAMEOVER: 
                 {
+                    draw_scene(GAMEOVER, screenWidth, screenHeight);
+
                     const char* gameover_message = "What happened? How did you die?";
-                    ClearBackground(DARKGRAY);
-                    Texture2D &oopsie_texture = oopsies_what;
-                    DrawText("GAME OVER", 20, 20, 40, WHITE);
                     switch (failure){
-                        case SCREEN_EDGE:     gameover_message = "You hit the window borders.";               oopsie_texture = oopsies_screenedge;     break;
-                        case CLONE_COLLISION: gameover_message = "You entered in collision with your clone."; oopsie_texture = oopsies_clonecollision; break;
-                        case DOOM_POTION:     gameover_message = "You drank the death potion.";               oopsie_texture = oopsies_doom;           break;
+                        case SCREEN_EDGE:     gameover_message = "You hit the window borders."; break;
+                        case CLONE_COLLISION: gameover_message = "You entered in collision with your clone."; break;
+                        case DOOM_POTION:     gameover_message = "You drank the death potion."; break;
                         default: break;
                     }
+                    if (((get_screen_height() - dotty.getY()) > 64 and (dotty.getY() > 0) and vertically_collided) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
                     if (not has_moved){
                         if(hasnt_moved_counter >= 0 and hasnt_moved_counter <= 1) gameover_message  = "You hit the window borders.\nYou can move using the arrow or WASD keys.\n\nYou can also move using the left thumbstick\nor D-Pad if you are using a controller.";
                         else{
@@ -789,9 +455,9 @@ int main(void)
                                     if(random_counter == 1){
                                         // You're fricked :)
                                         #if defined(PLATFORM_DESKTOP)
-                                            SaveStorageValue(0, 1);
+                                            set_highscore(1);
                                         #endif
-                                        CloseWindow();
+                                        crash_game();
                                     }
                                 } break;
                                 case 22: gameover_message = "â”¬â”€â”¬ ãƒŽ( ã‚œ-ã‚œãƒŽ)"; break;
@@ -800,53 +466,21 @@ int main(void)
                         }
                     }
                     // if (not has_moved) gameover_message = "lmao fat fuck";
-                    if (((GetScreenHeight() - dotty.getY()) > 64 and (dotty.getY() > 0) and vertically_collided) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
-                    DrawText(gameover_message, 20, 80, 20, WHITE);
-                    DrawTexture(oopsie_texture, screenWidth - 512, screenHeight - 256, DARKGRAY);
-                    DrawText("press any key to continue", 20, screenHeight - 40, 20, WHITE);
+                    draw_gameover(failure, gameover_message, screenWidth, screenHeight);
                 } break;
                 case PAUSE: 
                 {
-                    // DrawRectangle(0, 0, screenWidth, screenHeight, GRAY);
-                    ClearBackground(LIGHTGRAY);
-                    int displayHeight = screenHeight / 2;
-                    DrawText("PAUSED", (screenWidth / 2) - (164 / 2), displayHeight - 36, 40, BLACK);                   // PAUSED's height is 28
-                    DrawText("pause again to continue", (screenWidth / 2) - (242 / 2), displayHeight + 26, 20, BLACK);  // this text's height is 18
-                    // it's 36 and 34 here to add 36 pixels of spacing between the two texts.. does this make sense? please tell me it does.
+                    draw_scene(PAUSE, screenWidth, screenHeight);
                 } break;
                 default: break;
             }
-            EndDrawing();
+            frame_end();
 
          //----------------------------------------------------------------------------------
 
     }
 
-    // Unload stuff
-    UnloadTexture(splash_logo);
-    UnloadTexture(dotty_base);
-    UnloadTexture(dotty_front);
-    UnloadTexture(dotty_clone);
-    UnloadTexture(dotty_down);
-    UnloadTexture(dotty_up);
-    UnloadTexture(dotty_right);
-    UnloadTexture(dotty_left);
-    UnloadTexture(dot);
-    UnloadTexture(potion_dot);
-    UnloadTexture(potion_dupe);
-    UnloadTexture(potion_doom);
-    UnloadTexture(oopsies_screenedge);
-    UnloadTexture(oopsies_clonecollision);
-    UnloadTexture(oopsies_what);
-    UnloadTexture(oopsies_doom);
-    UnloadSound(ouchie);
-    UnloadSound(obtained);
-    UnloadSound(potion_sound);
-    UnloadSound(clone_ouchie);
-    // ... is this going to cause a memory leak?
-    
-
-    CloseWindow();
+    close_game();
 
     return 0;
 }
