@@ -13,11 +13,16 @@ extern int platformScreenHeight;
 enum Directions{ NONE, LEFT, RIGHT, UP, DOWN };
 enum Sprite{ DOTTY_BASE, DOT, POTION_DOT, POTION_DUPE, POTION_DOOM, DOTTY_RIGHT, DOTTY_LEFT, DOTTY_UP, DOTTY_DOWN, DOTTY_FRONT, DOTTY_CLONE };
 enum Sounds{ OBTAINED, CLONE_OUCHIE, POTION_OBTAINED, OWIE };
-typedef enum Failures { ALIVE, SCREEN_EDGE, CLONE_COLLISION, DOOM_POTION } Failures;  // no, being alive is not a failure. you're amazing alive. keep being you.
+
+typedef enum Failures { NONE_YET, SCREEN_EDGE, CLONE_COLLISION, DOOM_POTION } Failures;
+// It's really tough to name a "not failing" state
+// that doesn't sound like an endorsement for offing oneself.
+// Sorry. This should be better than "failure = ALIVE" or "NOT_DEAD"
+
 typedef enum GameScreen { SPLASH, TITLE, GAMEPLAY, PAUSE, GAMEOVER } GameScreen;
 Directions get_movement(void);
 
-bool exit_game(void);
+bool should_exit_game(void);
 bool press_start(void);
 bool do_pause(void);
 bool start_pause_menu(void);
