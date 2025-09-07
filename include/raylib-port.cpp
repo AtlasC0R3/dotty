@@ -23,7 +23,8 @@ bool gesture_movement;
 bool continuedUsingPause;
 bool alreadyPressedPause;
 
-const char* bottom_text;
+char* bottom_text;
+const char* SAVE_FILE = "highscr.dty";
 
 // texture variables
 Sound ouchie;
