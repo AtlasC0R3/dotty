@@ -189,7 +189,7 @@ void close_game(){
     // ... is this going to cause a memory leak?
     
 
-    CloseWindow();
+    if(IsWindowReady()) CloseWindow();
 }
 
 // Controller/keyboard input mechanisms
@@ -295,7 +295,7 @@ Directions get_movement(void){
     return NONE;
 }
 
-bool exit_game(void){
+bool should_exit_game(void){
     bool exit = false;
     int a;
     if(WindowShouldClose()) return true;
