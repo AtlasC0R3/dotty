@@ -1,4 +1,5 @@
 bin/
-storage.data
+highscr.dty
 resources/fonts/font.ttf
 # i don't own the rights to this font.
+*.code-workspace
