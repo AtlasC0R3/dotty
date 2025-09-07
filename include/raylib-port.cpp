@@ -1,8 +1,10 @@
 #include "graphics-logic.h"
 #include "raylib.h"
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
+#include <ostream>
 #include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
 #ifdef PLATFORM_DESKTOP
 #include <dirent.h>
 #endif
