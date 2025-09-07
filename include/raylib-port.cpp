@@ -162,7 +162,7 @@ void initialize_game(){
 
     // 2 more megs of RAM later, we're at 82 megabytes, most of which taken up by Raylib's InitWindow!
     
-    SetTargetFPS(60);
+    SetTargetFPS(200);
 }
 
 void close_game(){
