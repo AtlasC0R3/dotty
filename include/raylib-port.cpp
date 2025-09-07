@@ -423,9 +423,11 @@ void draw_scene(GameScreen scene, const int screenWidth, const int screenHeight)
             DrawText("made with raylib", 20, screenHeight - 40, 20, WHITE);
         }; break;
         case TITLE: {
+            const char* PRESS_KEY = "press any key";
             ClearBackground(GRAY);
-            DrawTexture(splash_logo, (screenWidth / 2) - splash_logo.width / 2, (screenHeight / 2) - splash_logo.height * 0.75, GRAY);
-            DrawText("press any key", (screenWidth / 2) - (219 / 2), screenHeight * 0.75, 30, BLACK);
+            DrawTexture(splash_logo, (screenWidth / 2) - splash_logo.width / 2, int (screenHeight / 2.0f) - splash_logo.height * 0.75, GRAY);
+            // now why the actual FUCK do I have to cast the end result of posY and not just screenHeight? fuck's wrong with you, Clang?! 
+            DrawText(PRESS_KEY, screenWidth / 2 - MeasureText(PRESS_KEY, 30) / 2, screenHeight * 0.75, 30, BLACK);
         }; break;
         case GAMEPLAY: ClearBackground(RAYWHITE); break;
         case GAMEOVER: {
@@ -438,7 +440,7 @@ void draw_scene(GameScreen scene, const int screenWidth, const int screenHeight)
             int displayHeight = screenHeight / 2;
             DrawText("PAUSED", (screenWidth / 2) - (164 / 2), displayHeight - 36, 40, BLACK);                   // PAUSED's height is 28
             DrawText("pause again to continue", (screenWidth / 2) - (242 / 2), displayHeight + 26, 20, BLACK);  // this text's height is 18
-            // it's 36 and 34 here to add 36 pixels of spacing between the two texts.. does this make sense? please tell me it does.
+            // TODO: MeasureText here like in case TITLE
         }; break;
         default: break;
     }
