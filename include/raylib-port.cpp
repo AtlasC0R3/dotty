@@ -74,20 +74,50 @@ void initialize_game(){
     #if defined(PLATFORM_DESKTOP)
         if (!opendir("resources")) {
             printf("Could not find the resources/ folder. This will render the game unplayable.\n");
+            InitWindow(600, 400, "My resources are unavailable! >:(");
+
+            while(
+                !(IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || GetKeyPressed() != KEY_NULL || WindowShouldClose())
+                ){
+                BeginDrawing();
+
+                ClearBackground(RAYWHITE);
+                DrawText("My \"resources\" folder is gone!", 8, 8, 32, BLACK);
+                DrawText("FIX THIS!!!", 8, 48, 64, BLACK);
+                DrawText("The game is broken otherwise!", 8, 128, 32, BLACK);
+                DrawText("Re-download the game, or put it", 8, 160, 32, BLACK);
+                DrawText("back where it belongs!", 8, 192, 32, BLACK);
+
+                DrawRectangle(0, 280, 600, 200, BLACK);
+                DrawText("Signed,", 32, 300, 24, WHITE);
+                DrawText("Angry Faceless Dotty.", 32, 330, 48, WHITE);
+
+                EndDrawing();
+            }
+
+            CloseWindow();
             exit(1);
+            return;
         }
     #endif
 
-    InitWindow(platformScreenWidth, platformScreenHeight, "Dotty");
+    try {
+        InitWindow(platformScreenWidth, platformScreenHeight, "Dotty");  // 70 megabytes of RAM
+    } catch (...) {
+        // FIXME: figure out how to catch a segfault with raylib's InitWindow
+        printf(
+            "\n\nHey, buddy! Do you even have a GUI? Raylib couldn't initialize the window! What is this, the 1980s? DOS??\nSigned, Confused Dotty."
+        );
+    }
     SetWindowState(FLAG_WINDOW_RESIZABLE);
-    SetWindowMinSize(platformScreenWidth, platformScreenHeight);  // Turns out, I'm a dense dumbass.
+    SetWindowMinSize(platformScreenWidth, platformScreenHeight);
 
     // Initialize audio
-      InitAudioDevice();
-      ouchie       = LoadSound("resources/raylib/sounds/ouchie.wav");
-      obtained     = LoadSound("resources/raylib/sounds/obtained.wav");
-      potion_sound = LoadSound("resources/raylib/sounds/potion.wav");
-      clone_ouchie = LoadSound("resources/raylib/sounds/clone-ouchie.wav");
+      InitAudioDevice();  // 3 more megabytes of RAM
+      ouchie       = LoadSound("resources/sounds/ouchie.ogg");
+      obtained     = LoadSound("resources/sounds/obtained.ogg");
+      potion_sound = LoadSound("resources/sounds/potion.ogg");
+      clone_ouchie = LoadSound("resources/sounds/clone-ouchie.ogg");
 
     // Initialize textures.
     // NOTE: Textures MUST be loaded after Window initialization (OpenGL context is required)
