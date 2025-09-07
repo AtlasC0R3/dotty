@@ -2,7 +2,7 @@
 #include <math.h>
 #include <vector>
 
-Player::Player(double x, double y, int width, int height)
+Player::Player(float x, float y, int width, int height)
 {
 	this->x = x;
 	this->y = y;
@@ -10,22 +10,22 @@ Player::Player(double x, double y, int width, int height)
 	this->height = height;
 }
 
-double Player::getX()
+float Player::getX()
 {
 	return x;
 }
 
-double Player::getY()
+float Player::getY()
 {
 	return y;
 }
 
-void Player::setX(int x)
+void Player::setX(float x)
 {
     this->x = x;
 }
 
-void Player::setY(int y)
+void Player::setY(float y)
 {
     this->y = y;
 }
@@ -39,9 +39,9 @@ int Player::getHeight()
 {
     return height;
 }
-double Player::getRelativeX(){
+float Player::getRelativeX(){
     return getX() + getWidth() / 3;
 }
-double Player::getRelativeY(){
+float Player::getRelativeY(){
     return getY() + getHeight() / 3;
 }

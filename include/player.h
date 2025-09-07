@@ -4,19 +4,19 @@
 class Player
 {
   private:
-	double x;
-    double y;
+	  float x;
+    float y;
     int width;
     int height;
 	
   public:
-	Player(double x, double y, int width, int height);
-	double getX();
-	double getY();
-  double getRelativeX();
-	double getRelativeY();
-    void setX(int x);
-    void setY(int y);
+	Player(float x, float y, int width, int height);
+	float getX();
+	float getY();
+  float getRelativeX();
+	float getRelativeY();
+    void setX(float x);
+    void setY(float y);
     int getWidth();
     int getHeight();
 
