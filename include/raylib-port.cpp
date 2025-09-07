@@ -323,12 +323,10 @@ bool press_start(void){
        IsGestureDetected(GESTURE_TAP)){                                                                     // check if the user tapped on the window or screen
         start = true;
     }
-    int a;
-    for( a = 0; a <= 8; a+=1 ){
+    for( int a = 0; a <= 8; a+=1 ){
         if (IsGamepadAvailable(a)){
             // there's a gamepad!
-            int b;
-            for (b=0;b <= GetGamepadAxisCount(a);b+=1){
+            for (int b = 0;b <= GetGamepadAxisCount(a);b+=1){
                 if (GetGamepadAxisMovement(a, b) == 1){
                     start = true;
                 }
