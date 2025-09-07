@@ -457,15 +457,15 @@ void draw_gameover(Failures failure, const char* gameover_message, const int scr
     DrawText("press any key to continue", 20, screenHeight - 40, 20, WHITE);
 }
 
-void draw_score(int score, int highscore){
+void draw_score(unsigned int score, unsigned int highscore){
     char eaten_cchar[32];
     char bottom_text[32];
-    sprintf(eaten_cchar, "%d", score);
+    sprintf(eaten_cchar, "%u", score);
     #if defined(PLATFORM_DESKTOP)
-        sprintf(bottom_text, "BEST: %d", highscore);
+        sprintf(bottom_text, "BEST: %u", highscore);
         DrawText(eaten_cchar, 20, get_screen_height() - 80, 20, DARKGRAY);
-    #else
-        bottom_text = eaten_cchar;
+    // #else
+    //     bottom_text = eaten_cchar;
     #endif
     DrawText(bottom_text, 20, get_screen_height() - 40, 20, DARKGRAY);
 }
