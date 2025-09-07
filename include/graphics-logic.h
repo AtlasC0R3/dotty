@@ -4,8 +4,8 @@
 void initialize_game(void);
 void close_game(void);
 
-int get_highscore(void);
-void set_highscore(int highscore);
+unsigned int get_highscore(void);
+void set_highscore(unsigned int highscore);
 
 extern int platformScreenWidth;
 extern int platformScreenHeight;
@@ -32,7 +32,7 @@ void frame_end(void);
 void draw_scene(GameScreen scene, const int screenWidth = platformScreenWidth, const int screenHeight = platformScreenHeight);
 void draw_gameover(Failures failure, const char* gameover_message, const int screenWidth, const int screenHeight);
 
-void draw_score(int score, int highscore);
+void draw_score(unsigned int score, unsigned int highscore);
 
 void draw_sprite(Sprite sprite, const int x, const int y);
 void play_sound(Sounds sound);
