@@ -1,70 +1,85 @@
 // C includes
-#include <stdio.h>
+#include <raylib.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // Game-specific includes and stuff
+// TODO: not do this ../ nonsense?
 #include "../include/player.h"  // That works.
 #include "../include/dot.h"
 #include "../include/potion.h"
 #include "../include/graphics-logic.h"
 
-#include <unistd.h>
-
-bool debug_prints = false;
-bool extreme_debug_prints = false;
 
 // Setting variables for game logic
-Player dotty{50, 50, 96, 96};
-Player dupedotty{50, 50, 96, 96};
-double velX;
-double velY;
-double vel;
-int game_status = 0;
-bool left;
-bool right;
-bool up;
-bool down;
-bool old_left;
-bool old_right;
-bool old_up;
-bool old_down;
-bool has_moved = false;
-bool vertically_collided = false;
+Player dotty{50, 50, 96, 96};      // The main player.
+Player dupedotty{50, 50, 96, 96};  // The second player (or the clone)
+
+float velX;  // By how much the player should move horizontally
+float velY;  // Ditto, vertically
+float vel;   // Base velocity speed, will then be applied to the above.
+             // TODO: this could be optimized better. use boolean to determine if X or Y.
+float multiplier;  // by how much do we multiply/divide the velocity speed
+
+bool left;   // are we going left?
+bool right;  // are we going right?
+bool up;     // are we.. you get the idea
+bool down;   // TODO: all of this could be an enum; the game allows only one direction.
+
+// bool old_left;  // fuck are you doing???
+// bool old_right;
+// bool old_up;
+// bool old_down;
+
+bool has_moved = false;  // has the player moved more than once? used for the reminder on controls
 bool nightmare = false;  // enable this to experience pain
-int hasnt_moved_counter = 0;
-int random_counter;
+int hasnt_moved_counter = 0;  // how many times has the player not moved? used to taunt the user in game over screen.
 
-bool has_saved = false;
+bool has_saved = false;  // did we already save? if so, don't save again every frame.
 
-int screenWidth  = platformScreenWidth;
+int screenWidth  = platformScreenWidth;   // defined by graphics-logic.h
 int screenHeight = platformScreenHeight;
-int screenWidthBeforeFullscreen;
-int screenHeightBeforeFullscreen;
 
-Dot dots[8] = {};
-Potion potion;
-Potion dupepotion;
-Potion doompotion;
-bool dupe = false;
+Dot dots[8] = {};    // array of dots. TODO: can we make this unlimited?
+int dot_amount = 1;  // how many actual dots are in the game?
+Potion potion;       // the potion used to increase the amount of dots.
+Potion dupepotion;   // ditto; Dotty clone.
+Potion doompotion;   // ditto; death potion.
+bool dupe = false;   // is clone Dotty active?
 
-int highscoreInt;
-char highscore[32];
+unsigned int highscoreInt;  // our highscore, as an int (unsigned = cannot go below 0)
+unsigned int eaten = 0;     // our current score, how many dots have been eaten?
 
-int dot_amount = 1;
-int eaten = 0;
 typedef enum Actions { NOTHING, DOT_OBTAINED, DUPE_DOTS, DUPE_DOTTY, DUPE_LOST, OUCHIE } Actions;
-Actions collision_type = NOTHING;
-Actions old_collision_type;
-Failures failure;
-double multiplier;
+// enum of possible.. not "collisions" but "things that can happen by bumping into them" (so actions)
+Actions collision_type = NOTHING;  // current action that is happening
+Failures failure;                  // current failure, or reason for game over
 
-bool pauseButtonAlreadyPressed;
+// Actions old_collision_type;  // unbelievably stupid fucking idiot, me! why the fuck would you do this?!
 
-bool pressed_pause_to_continue = false;  // often times, people would press the Space key to play again, after a "game over" screen
-                                         // activating the pause menu from within the game
+bool pressed_pause_to_continue = false;  // this prevents a bug where the user presses Space to start the game
+                                         // and immediately pauses the game.
 //--------------------------------------------------------------------------------------
 
-double get_velocity() {return ((((screenWidth / 265) + (screenHeight / 150)) / 2) + ((eaten * 2) * multiplier));};
+float get_velocity(bool isVertical = false) {
+    // by how much should the protagonist move, relative to the frame time?
+
+    // return (
+    //     (
+    //         (((float)screenWidth / 265) + ((float)screenHeight / 150)) / 2
+    //     ) + ((eaten * 2) * multiplier)
+    //     );
+
+    int baseSpeed = 3;                                  // Dotty's base speed at its base resolution.
+    int points = baseSpeed + (eaten * 2 * multiplier);  // The base speed + eaten dots
+    float targetDelta = 0.016667f;                      // 60fps time delta
+
+    // adjust velocity based on frame time
+    float adjustedSpeed = points * (GetFrameTime() / targetDelta);
+    // Adjusted Speed = Base Speed * (Current Delta / Target Delta)
+
+    return adjustedSpeed;
+};
 
 void reset_dots(const int screenWidth, const int screenHeight){
     for (int i = 0; i < 8; i++) dots[i].remove();
@@ -72,6 +87,7 @@ void reset_dots(const int screenWidth, const int screenHeight){
 }
 
 void reset_dotty(const int screenWidth, const int screenHeight){
+    // reinitialize everything
     dotty = {50, 50, 96, 96};
     dupedotty = {-5000, -5000, 96, 96};
     dot_amount = 1;
@@ -82,7 +98,6 @@ void reset_dotty(const int screenWidth, const int screenHeight){
     eaten = 0;
     dupe = false;
     has_moved = false;
-    vertically_collided = false;
     highscoreInt = get_highscore();
 
     reset_dots(screenWidth, screenHeight);
@@ -94,6 +109,7 @@ void reset_dotty(const int screenWidth, const int screenHeight){
 };
 
 void fix_stuff_outside_window(const int screenWidth, const int screenHeight, const int deadzone = 40){
+    // TODO: this is probably broken
     for (int i = 0; i < dot_amount; i++) if(dots[i].getX() + deadzone > screenWidth or dots[i].getY() + deadzone > screenHeight) dots[i].updatePosition(screenWidth, screenHeight);
     if((potion.getX() + deadzone > screenWidth) or
        (potion.getY() + deadzone > screenHeight))
@@ -107,10 +123,19 @@ void fix_stuff_outside_window(const int screenWidth, const int screenHeight, con
 };
 
 bool check_collision_line(double point1, double point2){
+    // TODO: make this use vectors or tuples?
+    //       by the way, take methamphetamine and fix this code.
+
     // point1 = point1.getX()
     // point2 = point2.getX()
-    // point1 = dotty
-    // point2 = dot
+
+    // point1 = dotty's X or Y position
+    // point2 = object's X/Y pos
+
+    // return (
+    //     point1 > point2 && // we are within the object from its left; we are to its right
+    //     point1 < point2    // however we are not outside of its boundaries to the right
+    // );
 
     return (point1 + 48 > point2 && point1 < point2 + 48);
 };
@@ -124,14 +149,14 @@ bool check_collision_2d(double point1x, double point1y, double point2x, double p
 
 bool check_dotty_collision(double x, double y){
     // Checks if either the main Dotty or clone Dotty collides against an object using specified coordinates.
-    return (check_collision_2d(dotty.getX(), dotty.getY(), x, y)       // Main Dotty collided
+    return (check_collision_2d(dotty.getX(), dotty.getY(), x, y)       // Main Dotty collided with something
     or check_collision_2d(dupedotty.getX(), dupedotty.getY(), x, y));  // Dupe Dotty collided
 };
 
 bool check_player_window_collision(){
-    if(dotty.getY() + 64 >= screenHeight) vertically_collided = true;
     return (((dotty.getX() + 64 >= screenWidth) or (dotty.getX() <= 0)) or ((dotty.getY() + 64 >= screenHeight) or (dotty.getY() <= 0)));
 };
+
 
 void checkPlayerCollision(const int screenWidth, const int screenHeight)
 {
@@ -185,7 +210,7 @@ void checkPlayerCollision(const int screenWidth, const int screenHeight)
             collision_type = OUCHIE;
             failure = CLONE_COLLISION;
             // the duplicate Dotty's entered in collision
-            // i would say "bonk" but the British definition of the verb prevents me from doing so
+            // bonk. hehe
         }
     }
 }
@@ -194,34 +219,45 @@ void checkPlayerCollision(const int screenWidth, const int screenHeight)
 
 int main(void)
 {
+    // initialize the game
+    // this function will set up the window, the game loop, and the game state
+    // it will also set up the game's variables and functions
+    // it will also set up the game's objects and functions
+    // it will also set up the game's sounds and music
     initialize_game();
 
-    int framesCounter = 0;  // used to show title screen after 2 seconds
+    float * spentTime = new float;  // used to show title screen after 2 seconds
 
     GameScreen currentScreen = SPLASH;
 
     reset_dotty(screenWidth, screenHeight);
 
-    while (!exit_game())  // run until user presses either Xbox/PS/Home/Steam button on controller or closes window
-                          // check the actual function for more info on "what does it do and how does it do"
+    while (!should_exit_game())  // run until user presses either Xbox/PS/Home/Steam button on controller or closes window
+                                 // check the actual function for more info on "what does it do and how does it do"
     {
+        int baseWidth = 800;
+        int baseHeight = 450;
         screenWidth =  get_screen_width();
         screenHeight = get_screen_height();
+
+        float horizontalScalingFactor = float(screenWidth) / baseWidth;
+        float verticalScalingFactor = float(screenHeight) / baseHeight;
 
         vel = get_velocity();
         if(nightmare) vel *= 10;
 
         switch(currentScreen)
         {
-            case SPLASH: 
+            case SPLASH:
             {
-                framesCounter++;    // Count frames
+                *spentTime += GetFrameTime();  // this doesn't count the time spent drawing something, does it?
 
-                if (framesCounter > 90 or press_start()){
+                if (*spentTime > 1.5f or press_start()){
                     currentScreen = TITLE;
+                    delete spentTime;
                 }
             } break;
-            case TITLE: 
+            case TITLE:
             {
                 if (press_start()){
                     currentScreen = GAMEPLAY;
@@ -231,12 +267,13 @@ int main(void)
             } break;
             case GAMEPLAY:
             {
-                sprintf(highscore, "BEST: %d", highscoreInt);
+                TraceLog(LOG_DEBUG, TextFormat("Player velocity currently is %f", get_velocity()));
+                TraceLog(LOG_DEBUG, TextFormat("FPS is at %d", GetFPS()));
 
-                failure = ALIVE;
+                failure = NONE_YET;
 
                 left = false; right = false; up = false; down = false;
-                // yes this part is necessary otherwise movement will be janky and unresponsive.
+                // this part is necessary otherwise movement will be janky and unresponsive.
 
                 // add control stuff
                 Directions movement = get_movement();
@@ -256,7 +293,8 @@ int main(void)
                 }
 
                 if(is_window_resized()){
-                    if(check_player_window_collision()){
+                    // is the window or play field being resized?
+                    if(check_player_window_collision()){  // is the field being resized AND have we collided?
                         dotty.setX(50);
                         dotty.setY(50);
                         left = false;
@@ -271,7 +309,7 @@ int main(void)
                 }
 
                 // applying velocity integers
-                     if (left  or velX < 0) velX = vel * -1;
+                if      (left  or velX < 0) velX = vel * -1;
                 else if (right or velX > 0) velX = vel;
                 else if (up    or velY < 0) velY = vel * -1;
                 else if (down  or velX > 0) velY = vel;
@@ -282,9 +320,9 @@ int main(void)
                     failure = SCREEN_EDGE;
                 }
 
-                // applying movements
-                dotty.setX(dotty.getX() + velX);
-                dotty.setY(dotty.getY() + velY);
+                // applying movements with scaling factors in mind
+                dotty.setX(dotty.getX() + (velX * horizontalScalingFactor));
+                dotty.setY(dotty.getY() + (velY * verticalScalingFactor));
                 if (dupe){
                     dupedotty.setX(screenWidth  - (dotty.getX() + 64));
                     dupedotty.setY(screenHeight - (dotty.getY() + 64));
@@ -292,10 +330,8 @@ int main(void)
 
                 // player collision
                 checkPlayerCollision(screenWidth, screenHeight);
-                old_collision_type = collision_type;
-                collision_type = NOTHING;
-                if (old_collision_type != NOTHING){
-                    switch (old_collision_type){
+                if (collision_type != NOTHING){
+                    switch (collision_type){
                         case DOT_OBTAINED: play_sound(OBTAINED); break;
                         case DUPE_LOST:    play_sound(CLONE_OUCHIE); break;
                         case DUPE_DOTS:    play_sound(POTION_OBTAINED); break;
@@ -309,19 +345,17 @@ int main(void)
                         }
                         default: break;
                     }
+                    collision_type = NOTHING;
                 }
 
                 // potion randomizer stuff
                 if (rand() % 2000 == 1){
                     potion.update(screenWidth, screenHeight);
-                    if(debug_prints) play_sound(CLONE_OUCHIE);
                 }
                 if (rand() % 2500 == 1){
                     dupepotion.update(screenWidth, screenHeight);
-                    if(debug_prints) play_sound(CLONE_OUCHIE);
                 }
                 if (rand() % 500 == 1){
-                    if(debug_prints) play_sound(CLONE_OUCHIE);
                     while(true){
                         doompotion.update(screenWidth, screenHeight);
                         if(!((dotty.getX() + 96 > doompotion.getX() && dotty.getX() < doompotion.getX() + 96) && (dotty.getY() + 96 > doompotion.getY() && dotty.getY() < doompotion.getY() + 96)) or
@@ -331,12 +365,11 @@ int main(void)
                     }
                 }
             } break;
-            case GAMEOVER: 
+            case GAMEOVER:
             {
                 if (nightmare){  // The user didn't listen.
                     has_moved = false;
                     hasnt_moved_counter = 21;
-                    random_counter = 1;
                 }
                 if (eaten > highscoreInt){
                     highscoreInt = eaten;
@@ -352,14 +385,12 @@ int main(void)
                 {
                     if(not has_moved) hasnt_moved_counter+=1;
                     if(hasnt_moved_counter == 22) nightmare = true;
-                    if(hasnt_moved_counter == 20)
-                    random_counter = rand() % 3 + 1;
                     reset_dotty(screenWidth, screenHeight);
                     if(do_pause()) pressed_pause_to_continue = true;
                     currentScreen = GAMEPLAY;
-                }  
+                }
             } break;
-            case PAUSE: 
+            case PAUSE:
             {
                 if (do_pause()) currentScreen = GAMEPLAY;
             } break;
@@ -368,7 +399,7 @@ int main(void)
 
         frame_start();
 
-        switch(currentScreen) 
+        switch(currentScreen)
             {
                 case SPLASH: draw_scene(SPLASH, screenWidth, screenHeight); break;
                 case TITLE: draw_scene(TITLE, screenWidth, screenHeight); break;
@@ -377,7 +408,7 @@ int main(void)
                     draw_scene(GAMEPLAY);
 
                     for (int i = 0; i < 8; i++) draw_sprite(DOT, dots[i].getX(), dots[i].getY());
-        
+
                     draw_sprite(POTION_DOT,  potion.getX(),     potion.getY());
                     draw_sprite(POTION_DUPE, dupepotion.getX(), dupepotion.getY());
                     draw_sprite(POTION_DOOM, doompotion.getX(), doompotion.getY());
@@ -395,7 +426,7 @@ int main(void)
                         // couldn't determine in which position they were going
                         draw_sprite(DOTTY_FRONT, dotty.getX(), dotty.getY());
                     }
-        
+
                     if(dupe){
                         draw_sprite(DOTTY_BASE, dupedotty.getX(), dupedotty.getY());
                         draw_sprite(DOTTY_CLONE, dupedotty.getX(), dupedotty.getY());
@@ -412,10 +443,10 @@ int main(void)
                             draw_sprite(DOTTY_FRONT, dupedotty.getX(), dupedotty.getY());
                         }
                     }
-                    
+
                     draw_score(eaten, highscoreInt);
                 } break;
-                case GAMEOVER: 
+                case GAMEOVER:
                 {
                     draw_scene(GAMEOVER, screenWidth, screenHeight);
 
@@ -426,7 +457,7 @@ int main(void)
                         case DOOM_POTION:     gameover_message = "You drank the death potion."; break;
                         default: break;
                     }
-                    if (((get_screen_height() - dotty.getY()) > 64 and (dotty.getY() > 0) and vertically_collided) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
+                    // if (((get_screen_height() - dotty.getY()) > 64 and (dotty.getY() > 0) and vertically_collided) and failure == SCREEN_EDGE) gameover_message = "You really shouldn't play around with the window like that.";
                     if (not has_moved){
                         if(hasnt_moved_counter >= 0 and hasnt_moved_counter <= 1) gameover_message  = "You hit the window borders.\nYou can move using the arrow or WASD keys.\n\nYou can also move using the left thumbstick\nor D-Pad if you are using a controller.";
                         else{
@@ -449,18 +480,10 @@ int main(void)
                                 case 17: gameover_message = "Okay, I'm not joking. Stop."; break;
                                 case 18: gameover_message = "You're forcing my hand."; break;
                                 case 19: gameover_message = "Stop, I'm serious. This is your last chance."; break;
-                                case 20: gameover_message = "OLOLO POOLOA"; break;
                                 case 21: {
-                                    gameover_message = "You made me do this. :)";
-                                    if(random_counter == 1){
-                                        // You're fricked :)
-                                        #if defined(PLATFORM_DESKTOP)
-                                            set_highscore(1);
-                                        #endif
-                                        crash_game();
-                                    }
+                                    gameover_message = "";
                                 } break;
-                                case 22: gameover_message = "â”¬â”€â”¬ ãƒŽ( ã‚œ-ã‚œãƒŽ)"; break;
+                                case 22: gameover_message = "â”¬â”€â”¬ ãƒŽ( ã‚œ-ã‚œãƒŽ)"; break;  // what did this come from?
                                 default: break;
                             }
                         }
@@ -468,7 +491,7 @@ int main(void)
                     // if (not has_moved) gameover_message = "lmao fat fuck";
                     draw_gameover(failure, gameover_message, screenWidth, screenHeight);
                 } break;
-                case PAUSE: 
+                case PAUSE:
                 {
                     draw_scene(PAUSE, screenWidth, screenHeight);
                 } break;
