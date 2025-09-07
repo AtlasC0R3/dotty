@@ -25,7 +25,7 @@
 
 # Define required raylib variables
 PROJECT_NAME       ?= Dotty
-RAYLIB_VERSION     ?= 3.7.0
+RAYLIB_VERSION     ?= 5.0
 RAYLIB_API_VERSION ?= 3
 RAYLIB_PATH        ?= C:/raylib/raylib
 
@@ -49,7 +49,7 @@ RAYLIB_INSTALL_PATH ?= $(DESTDIR)/lib
 RAYLIB_H_INSTALL_PATH ?= $(DESTDIR)/include
 
 # Library type used for raylib: STATIC (.a) or SHARED (.so/.dll)
-RAYLIB_LIBTYPE        ?= STATIC
+RAYLIB_LIBTYPE        ?= SHARED
 
 # Build mode for project: DEBUG or RELEASE
 BUILD_MODE            ?= RELEASE
@@ -60,7 +60,7 @@ USE_EXTERNAL_GLFW     ?= FALSE
 
 # Use Wayland display server protocol on Linux desktop
 # by default it uses X11 windowing system
-USE_WAYLAND_DISPLAY   ?= FALSE
+USE_WAYLAND_DISPLAY   ?= TRUE
 
 # Determine PLATFORM_OS in case PLATFORM_DESKTOP selected
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
@@ -104,7 +104,7 @@ endif
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),LINUX)
         RAYLIB_PREFIX ?= ..
-        RAYLIB_PATH    = $(realpath $(RAYLIB_PREFIX))
+        RAYLIB_PATH    = "$(realpath $(RAYLIB_PREFIX))"
     endif
 endif
 # Default path for raylib on Raspberry Pi, if installed in different path, update it!
@@ -144,7 +144,7 @@ EXAMPLE_RUNTIME_PATH   ?= $(RAYLIB_RELEASE_PATH)
 
 # Define default C compiler: gcc
 # NOTE: define g++ compiler if using C++
-CC = gcc
+CC = clang
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),OSX)
@@ -196,7 +196,7 @@ endif
 #  -std=gnu99           defines C language mode (GNU C from 1999 revision)
 #  -Wno-missing-braces  ignore invalid warning (GCC bug 53119)
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
-CFLAGS += -Wall -std=c++14 -D_DEFAULT_SOURCE -Wno-missing-braces
+CFLAGS += -Wall -std=c++14 -D_DEFAULT_SOURCE -lc++
 
 ifeq ($(BUILD_MODE),DEBUG)
     CFLAGS += -g
@@ -217,7 +217,8 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),WINDOWS)
         # resource file contains windows executable icon and properties
         # -Wl,--subsystem,windows hides the console window
-        CFLAGS += dotty.res -Wl,--subsystem,windows
+        CFLAGS += dotty.res
+        CFLAGS += -Wl,--subsystem,windows
     endif
     ifeq ($(PLATFORM_OS),LINUX)
         ifeq ($(RAYLIB_LIBTYPE),STATIC)
@@ -391,6 +392,10 @@ endif
 # NOTE: We call this Makefile target or Makefile.Android target
 all:
 	$(MAKE) $(MAKEFILE_PARAMS)
+
+# Create directory for bin builds
+# TODO: atlas. make this directory creation work. I despise makefiles.
+# mkdir bin/
 
 # Project target defined by PROJECT_NAME
 $(PROJECT_NAME): $(OBJS)
