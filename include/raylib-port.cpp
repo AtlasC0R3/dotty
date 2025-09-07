@@ -125,40 +125,42 @@ void initialize_game(){
     // NOTE: Otherwise you'll get a "Segmentation fault" error.
 
     // Splash logo
-      splash_logo = LoadTexture("resources/raylib/images/splash.png");
+      splash_logo = LoadTexture("resources/images/splash.png");
     // Basic textures
-      dotty_base = LoadTexture("resources/raylib/images/dotty/base.png");
-      dotty_front = LoadTexture("resources/raylib/images/dotty/front.png");
-      dotty_clone = LoadTexture("resources/raylib/images/dotty/clone.png");
-      dotty_sleep = LoadTexture("resources/raylib/images/dotty/sleep.png");
+      dotty_base = LoadTexture("resources/images/dotty/base.png");
+      dotty_front = LoadTexture("resources/images/dotty/front.png");
+      dotty_clone = LoadTexture("resources/images/dotty/clone.png");
+      dotty_sleep = LoadTexture("resources/images/dotty/sleep.png");
     // Up-down textures
-      Image dotty_down_image = LoadImage("resources/raylib/images/dotty/down.png");
+      Image dotty_down_image = LoadImage("resources/images/dotty/down.png");
       Image *dotty_up_image = &dotty_down_image;
       dotty_down = LoadTextureFromImage(dotty_down_image);
       ImageFlipVertical(dotty_up_image);
       dotty_up = LoadTextureFromImage(dotty_down_image);
       UnloadImage(dotty_down_image);
     // Side textures
-      Image dotty_side = LoadImage("resources/raylib/images/dotty/side.png");
+      Image dotty_side = LoadImage("resources/images/dotty/side.png");
       Image *dotty_side_flipped = &dotty_side;
       dotty_right = LoadTextureFromImage(dotty_side);
       ImageFlipHorizontal(dotty_side_flipped);
       dotty_left = LoadTextureFromImage(dotty_side);
       UnloadImage(dotty_side);
     // Power-up textures
-      dot = LoadTexture("resources/raylib/images/items/dot.png");
+      dot = LoadTexture("resources/images/items/dot.png");
     // Potion textures
-      potion_dot = LoadTexture("resources/raylib/images/items/potion-dots.png");
-      potion_dupe = LoadTexture("resources/raylib/images/items/potion-dupe.png");
-      potion_doom = LoadTexture("resources/raylib/images/items/smallpotion-doom.png");
+      potion_dot = LoadTexture("resources/images/items/potion-dots.png");
+      potion_dupe = LoadTexture("resources/images/items/potion-dupe.png");
+      potion_doom = LoadTexture("resources/images/items/smallpotion-doom.png");
     // Power-up textures
-      oopsies_screenedge = LoadTexture("resources/raylib/images/oopsies/screen-edge.png");
-      oopsies_clonecollision = LoadTexture("resources/raylib/images/oopsies/clone-collision.png");
-      oopsies_what = LoadTexture("resources/raylib/images/oopsies/what-just-happened.png");
-      oopsies_doom = LoadTexture("resources/raylib/images/oopsies/doom-drank.png");
+      oopsies_screenedge = LoadTexture("resources/images/oopsies/screen-edge.png");
+      oopsies_clonecollision = LoadTexture("resources/images/oopsies/clone-collision.png");
+      oopsies_what = LoadTexture("resources/images/oopsies/what-just-happened.png");
+      oopsies_doom = LoadTexture("resources/images/oopsies/doom-drank.png");
     // Likely unused textures
-    //   dotty_blink = LoadTexture("resources/raylib/images/dotty/blink.png");
-    //   dotty_half = LoadTexture("resources/raylib/images/dotty/half-blink.png");
+    //   dotty_blink = LoadTexture("resources/images/dotty/blink.png");
+    //   dotty_half = LoadTexture("resources/images/dotty/half-blink.png");
+
+    // 2 more megs of RAM later, we're at 82 megabytes, most of which taken up by Raylib's InitWindow!
     
     SetTargetFPS(60);
 }
