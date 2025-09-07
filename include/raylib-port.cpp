@@ -47,9 +47,25 @@ Texture2D oopsies_what;
 Texture2D oopsies_doom;
 // -------------------------------
 
-int get_highscore(){return LoadStorageValue(0);};
-void set_highscore(int highscore){
-    SaveStorageValue(0, highscore);  // stores highscore integer in storage.data in an Int32 format
+// int get_highscore(){return LoadFileData(0);};
+// void set_highscore(int highscore){
+//     SaveStorageValue(0, highscore);  // stores highscore integer in storage.data in an Int32 format
+// }
+
+unsigned int get_highscore() {
+    int dataSize = 0;
+    unsigned char * fileData = LoadFileData(SAVE_FILE, &dataSize);
+
+    if(fileData == NULL){
+        set_highscore(0);        // create save file
+        return get_highscore();  // reload said save file
+    }
+
+    return ((unsigned int *) fileData)[0];
+}
+void set_highscore(unsigned int highscore){
+    SaveFileData(SAVE_FILE, &highscore, sizeof(int));
+    return;
 }
 
 void initialize_game(){
